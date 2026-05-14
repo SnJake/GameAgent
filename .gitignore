@@ -1,0 +1,16 @@
+.env
+.venv/
+builded_llama.cpp/
+llama.cpp/
+Задача.txt
+Arknight-Images/
+ArknightsGamedata/
+ArknightsGameData_Zh_CN/
+ArknightsStoryJson/
+data/*.sqlite
+data/*.sqlite-*
+data/*.log
+frontend/node_modules/
+frontend/dist/
+__pycache__/
+*.pyc
