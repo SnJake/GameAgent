@@ -13,7 +13,7 @@ from .config import ROOT_DIR, settings
 from .db import init_db
 from .indexer import git_pull_allowed_repo, rebuild_index
 from .search import get_stats, image_path_by_id, load_memory, save_memory, search_documents, search_images
-from .web_search import search_brave, search_wikis
+from .web_search import search_brave, search_endfield_wiki, search_wikis
 
 
 app = FastAPI(title="Arknights DB Agent", version="0.1.0")
@@ -39,6 +39,7 @@ def health() -> dict[str, object]:
         "model_configured": bool(settings.bothub_model and settings.bothub_api_key),
         "base_url": settings.bothub_base_url,
         "wiki_search_enabled": settings.wiki_search_enabled,
+        "endfield_wiki_search_enabled": settings.endfield_wiki_search_enabled,
         "web_search_enabled": settings.web_search_enabled,
         "brave_configured": bool(settings.brave_search_api_key),
         **stats,
@@ -67,6 +68,14 @@ def images(q: str = Query(..., min_length=1), limit: int = 12) -> dict[str, obje
 async def wiki_search(q: str = Query(..., min_length=1), limit: int = 6) -> dict[str, object]:
     try:
         return {"results": await search_wikis(q, limit=limit)}
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/api/web/endfield")
+async def endfield_wiki_search(q: str = Query(..., min_length=1), limit: int = 6) -> dict[str, object]:
+    try:
+        return {"results": await search_endfield_wiki(q, limit=limit)}
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 

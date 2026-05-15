@@ -10,7 +10,7 @@ from .config import settings
 from .prompts import read_prompt
 from .search import build_context, load_memory, save_memory, search_documents, search_images
 from .text import truncate
-from .web_search import build_external_context, search_brave, search_external, search_wikis
+from .web_search import build_external_context, search_brave, search_endfield_wiki, search_external, search_wikis
 
 
 class ChatMessage(BaseModel):
@@ -23,6 +23,7 @@ class ChatRequest(BaseModel):
     use_memory: bool = True
     use_tool_calls: bool | None = None
     use_wiki_search: bool = True
+    use_endfield_wiki_search: bool = False
     use_web_search: bool = False
     top_k: int = Field(default=8, ge=1, le=20)
 
@@ -60,6 +61,21 @@ TOOLS: list[dict[str, Any]] = [
         "function": {
             "name": "search_wikis",
             "description": "Search prts.wiki and arknights.wiki.gg through their MediaWiki APIs.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string"},
+                    "limit": {"type": "integer", "minimum": 1, "maximum": 10},
+                },
+                "required": ["query"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "search_endfield_wiki",
+            "description": "Search endfield.wiki.gg through its MediaWiki API. Use for Arknights: Endfield questions only.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -185,6 +201,8 @@ async def _execute_tool(name: str, arguments: str) -> str:
         return json.dumps(search_images(args.get("query", ""), args.get("limit", 8)), ensure_ascii=False)
     if name == "search_wikis":
         return json.dumps(await search_wikis(args.get("query", ""), args.get("limit", 6)), ensure_ascii=False)
+    if name == "search_endfield_wiki":
+        return json.dumps(await search_endfield_wiki(args.get("query", ""), args.get("limit", 6)), ensure_ascii=False)
     if name == "search_web":
         return json.dumps(await search_brave(args.get("query", ""), args.get("limit", 5)), ensure_ascii=False)
     if name == "save_user_memory":
@@ -218,7 +236,12 @@ async def answer(request: ChatRequest) -> ChatResponse:
         raise RuntimeError("BOTHUB_MODEL is empty. Fill .env with the model id you want to use.")
     query = _latest_user_text(request.messages)
     context, sources = build_context(query, limit=request.top_k)
-    external_sources = await search_external(query, use_wiki=request.use_wiki_search, use_web=request.use_web_search)
+    external_sources = await search_external(
+        query,
+        use_wiki=request.use_wiki_search,
+        use_endfield_wiki=request.use_endfield_wiki_search,
+        use_web=request.use_web_search,
+    )
     external_context = build_external_context(external_sources, start_index=len(sources) + 1)
     images = search_images(query, limit=6)
     messages = _prepare_messages(request, context, external_context)

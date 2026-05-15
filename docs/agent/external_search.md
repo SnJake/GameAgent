@@ -3,9 +3,16 @@
 The agent has two external search layers:
 
 - Wiki search: `prts.wiki` and `arknights.wiki.gg` through MediaWiki API.
+- Endfield wiki search: `endfield.wiki.gg` through MediaWiki API.
 - Web search: Brave Search API.
 
 Wiki search is enabled by default because it is targeted and does not require a key.
+
+Endfield wiki search is disabled by default so normal Arknights answers do not mix in Arknights: Endfield context. Enable it in `.env`:
+
+```env
+ENDFIELD_WIKI_SEARCH_ENABLED=true
+```
 
 Brave search is disabled by default because it can spend API quota. Enable it in `.env`:
 
@@ -19,11 +26,13 @@ WEB_SEARCH_MAX_RESULTS=5
 Endpoints:
 
 - `GET /api/web/wiki?q=Amiya&limit=6`
+- `GET /api/web/endfield?q=Endministrator&limit=6`
 - `GET /api/web/brave?q=Arknights%20news&limit=5`
 
 Chat request flags:
 
 - `use_wiki_search`: include wiki context in the model prompt.
+- `use_endfield_wiki_search`: include Endfield Talos Wiki context in the model prompt.
 - `use_web_search`: include Brave web results in the model prompt.
 
 The backend caches external search payloads in SQLite:

@@ -2,7 +2,7 @@
 
 Local Arknights database agent with SQLite search, BotHub/OpenAI-compatible chat, image lookup, small user memory, and a Node.js UI.
 
-It can also search `prts.wiki`, `arknights.wiki.gg`, and optional Brave Search API results.
+It can also search `prts.wiki`, `arknights.wiki.gg`, optional `endfield.wiki.gg`, and optional Brave Search API results.
 
 ## Setup
 

@@ -26,6 +26,11 @@ WIKI_SITES = {
         "page": "https://prts.wiki/w/{title}",
     },
 }
+ENDFIELD_WIKI_SITE = {
+    "source": "endfield.wiki.gg",
+    "api": "https://endfield.wiki.gg/api.php",
+    "page": "https://endfield.wiki.gg/wiki/{title}",
+}
 
 
 def _cache_key(provider: str, query: str, limit: int) -> str:
@@ -70,21 +75,25 @@ def _wiki_url(site: dict[str, str], title: str) -> str:
     return site["page"].format(title=title.replace(" ", "_"))
 
 
-async def search_wikis(query: str, limit: int | None = None) -> list[dict[str, Any]]:
-    if not settings.wiki_search_enabled:
-        return []
+async def _search_mediawiki_sites(
+    query: str,
+    sites: list[dict[str, str]],
+    *,
+    limit: int,
+    cache_provider: str,
+) -> list[dict[str, Any]]:
     query = query.strip()
     if not query:
         return []
-    max_results = max(1, min(limit or settings.wiki_search_max_results, 10))
-    key = _cache_key("wiki", query, max_results)
+    max_results = max(1, min(limit, 10))
+    key = _cache_key(cache_provider, query, max_results)
     cached = _cache_get(key, ttl_minutes=1440)
     if cached is not None:
         return cached
 
     results: list[dict[str, Any]] = []
     async with httpx.AsyncClient(timeout=25, headers={"User-Agent": USER_AGENT}) as client:
-        for site in WIKI_SITES.values():
+        for site in sites:
             search_response = await client.get(
                 site["api"],
                 params={
@@ -132,9 +141,33 @@ async def search_wikis(query: str, limit: int | None = None) -> list[dict[str, A
                         "body": truncate(body, 1600),
                     }
                 )
-    results = results[: max_results * len(WIKI_SITES)]
+    results = results[: max_results * len(sites)]
     _cache_set(key, results)
     return results
+
+
+async def search_wikis(query: str, limit: int | None = None) -> list[dict[str, Any]]:
+    if not settings.wiki_search_enabled:
+        return []
+    max_results = max(1, min(limit or settings.wiki_search_max_results, 10))
+    return await _search_mediawiki_sites(
+        query,
+        list(WIKI_SITES.values()),
+        limit=max_results,
+        cache_provider="wiki",
+    )
+
+
+async def search_endfield_wiki(query: str, limit: int | None = None) -> list[dict[str, Any]]:
+    if not settings.endfield_wiki_search_enabled:
+        return []
+    max_results = max(1, min(limit or settings.wiki_search_max_results, 10))
+    return await _search_mediawiki_sites(
+        query,
+        [ENDFIELD_WIKI_SITE],
+        limit=max_results,
+        cache_provider="endfield_wiki",
+    )
 
 
 async def search_brave(query: str, limit: int | None = None, *, strict: bool = False) -> list[dict[str, Any]]:
@@ -187,10 +220,18 @@ async def search_brave(query: str, limit: int | None = None, *, strict: bool = F
     return results
 
 
-async def search_external(query: str, *, use_wiki: bool = True, use_web: bool = False) -> list[dict[str, Any]]:
+async def search_external(
+    query: str,
+    *,
+    use_wiki: bool = True,
+    use_endfield_wiki: bool = False,
+    use_web: bool = False,
+) -> list[dict[str, Any]]:
     results: list[dict[str, Any]] = []
     if use_wiki:
         results.extend(await search_wikis(query))
+    if use_endfield_wiki:
+        results.extend(await search_endfield_wiki(query))
     if use_web:
         results.extend(await search_brave(query))
     return results

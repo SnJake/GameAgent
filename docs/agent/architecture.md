@@ -12,7 +12,7 @@
 
 1. User sends a chat message from the UI.
 2. Backend searches the SQLite index with FTS5.
-3. Backend optionally searches `prts.wiki` and `arknights.wiki.gg` through MediaWiki API.
+3. Backend optionally searches `prts.wiki`, `arknights.wiki.gg`, and `endfield.wiki.gg` through MediaWiki API.
 4. Backend optionally searches Brave Search API when web search is enabled.
 5. Backend builds compact local and external context blocks.
 6. Backend calls BotHub via OpenAI-compatible Chat Completions.

@@ -38,6 +38,7 @@ class Settings(BaseSettings):
 
     wiki_search_enabled: bool = True
     wiki_search_max_results: int = Field(default=4, ge=1, le=10)
+    endfield_wiki_search_enabled: bool = False
     web_search_enabled: bool = False
     web_search_provider: str = "brave"
     brave_search_api_key: str = ""

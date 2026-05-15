@@ -92,6 +92,7 @@ function App() {
   const [useMemory, setUseMemory] = useState(true);
   const [useTools, setUseTools] = useState(false);
   const [useWikiSearch, setUseWikiSearch] = useState(true);
+  const [useEndfieldWikiSearch, setUseEndfieldWikiSearch] = useState(false);
   const [useWebSearch, setUseWebSearch] = useState(false);
   const [topK, setTopK] = useState(8);
   const [rebuilding, setRebuilding] = useState(false);
@@ -182,6 +183,7 @@ function App() {
           use_memory: useMemory,
           use_tool_calls: useTools,
           use_wiki_search: useWikiSearch,
+          use_endfield_wiki_search: useEndfieldWikiSearch,
           use_web_search: useWebSearch,
           top_k: Number(topK)
         })
@@ -315,7 +317,11 @@ function App() {
           </label>
           <label className="toggle">
             <input type="checkbox" checked={useWikiSearch} onChange={(e) => setUseWikiSearch(e.target.checked)} />
-            <span>Wiki Search</span>
+            <span>Arknights Wiki Search</span>
+          </label>
+          <label className="toggle">
+            <input type="checkbox" checked={useEndfieldWikiSearch} onChange={(e) => setUseEndfieldWikiSearch(e.target.checked)} disabled={!health?.endfield_wiki_search_enabled} />
+            <span>Endfield Wiki Search</span>
           </label>
           <label className="toggle">
             <input type="checkbox" checked={useWebSearch} onChange={(e) => setUseWebSearch(e.target.checked)} disabled={!health?.brave_configured || !health?.web_search_enabled} />
@@ -323,7 +329,7 @@ function App() {
           </label>
           <div className="searchState">
             <Globe2 size={14} />
-            <span>Wiki: {health?.wiki_search_enabled ? 'on' : 'off'} · Brave: {health?.brave_configured ? 'key ok' : 'no key'}</span>
+            <span>AK Wiki: {health?.wiki_search_enabled ? 'on' : 'off'} · Endfield: {health?.endfield_wiki_search_enabled ? 'on' : 'off'} · Brave: {health?.brave_configured ? 'key ok' : 'no key'}</span>
           </div>
           <label className="range">
             <span>Контекст: {topK}</span>
