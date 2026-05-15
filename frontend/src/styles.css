@@ -33,6 +33,7 @@ body {
 
 button,
 input,
+select,
 textarea {
   font: inherit;
 }
@@ -266,6 +267,29 @@ h2 {
 
 .toggle input {
   accent-color: var(--accent);
+}
+
+.selectLabel {
+  display: grid;
+  gap: 7px;
+  margin-bottom: 10px;
+  color: var(--soft);
+  font-size: 13px;
+}
+
+.selectLabel select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--line);
+  background: #151719;
+  color: var(--text);
+  border-radius: 8px;
+  padding: 9px 10px;
+  outline: none;
+}
+
+.selectLabel select:focus {
+  border-color: var(--accent);
 }
 
 .toggle input:disabled + span {

@@ -20,6 +20,26 @@ class Settings(BaseSettings):
     bothub_api_key: str = ""
     bothub_model: str = ""
     bothub_base_url: str = "https://bothub.chat/api/v2/openai/v1"
+    llm_provider: str = "bothub"
+    llm_temperature: float = Field(default=0.2, ge=0, le=2)
+    llm_timeout_seconds: int = Field(default=120, ge=10, le=600)
+
+    openrouter_api_key: str = ""
+    openrouter_model: str = ""
+    openrouter_base_url: str = "https://openrouter.ai/api/v1"
+    openrouter_http_referer: str = "http://127.0.0.1:5173"
+    openrouter_x_title: str = "GameAgent"
+
+    xai_api_key: str = ""
+    xai_model: str = ""
+    xai_base_url: str = "https://api.x.ai/v1"
+
+    openai_api_key: str = ""
+    openai_model: str = ""
+    openai_base_url: str = "https://api.openai.com/v1"
+
+    gemini_api_key: str = ""
+    gemini_model: str = ""
 
     host: str = "127.0.0.1"
     port: int = 8017

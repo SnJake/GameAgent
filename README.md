@@ -4,6 +4,8 @@ Local Arknights database agent with SQLite search, BotHub/OpenAI-compatible chat
 
 It can also search `prts.wiki`, `arknights.wiki.gg`, optional `endfield.wiki.gg`, and optional Brave Search API results.
 
+LLM providers are configurable: BotHub, OpenRouter, x.ai, OpenAI, and Gemini.
+
 ## Setup
 
 1. Copy `.env.example` to `.env`.

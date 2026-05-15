@@ -89,6 +89,7 @@ function App() {
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [memory, setMemory] = useState({});
+  const [provider, setProvider] = useState('');
   const [useMemory, setUseMemory] = useState(true);
   const [useTools, setUseTools] = useState(false);
   const [useWikiSearch, setUseWikiSearch] = useState(true);
@@ -116,6 +117,7 @@ function App() {
     try {
       const [h, m] = await Promise.all([api('/api/health'), api('/api/memory')]);
       setHealth(h);
+      setProvider((current) => current || h.llm_provider || '');
       setMemory(m.memory || {});
     } catch (err) {
       setError(err.message);
@@ -180,6 +182,7 @@ function App() {
         method: 'POST',
         body: JSON.stringify({
           messages: payloadMessages,
+          provider: provider || undefined,
           use_memory: useMemory,
           use_tool_calls: useTools,
           use_wiki_search: useWikiSearch,
@@ -307,6 +310,17 @@ function App() {
 
         <section className="settings">
           <div className="sectionTitle"><Settings size={16} /> Настройки</div>
+          <label className="selectLabel">
+            <span>LLM provider</span>
+            <select value={provider} onChange={(e) => setProvider(e.target.value)} disabled={!health?.providers?.length}>
+              {!health?.providers?.length && <option value="">Loading providers...</option>}
+              {(health?.providers || []).map((item) => (
+                <option key={item.id} value={item.id} disabled={!item.configured}>
+                  {item.label}{item.model ? ` · ${item.model}` : ''}{item.configured ? '' : ' · not configured'}
+                </option>
+              ))}
+            </select>
+          </label>
           <label className="toggle">
             <input type="checkbox" checked={useMemory} onChange={(e) => setUseMemory(e.target.checked)} />
             <span>Память пользователя</span>

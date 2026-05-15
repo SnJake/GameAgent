@@ -7,6 +7,8 @@ import httpx
 from pydantic import BaseModel, Field
 
 from .config import settings
+from .llm import get_provider
+from .llm.base import extract_openai_text
 from .prompts import read_prompt
 from .search import build_context, load_memory, save_memory, search_documents, search_images
 from .text import truncate
@@ -20,6 +22,7 @@ class ChatMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: list[ChatMessage] = Field(default_factory=list)
+    provider: str | None = None
     use_memory: bool = True
     use_tool_calls: bool | None = None
     use_wiki_search: bool = True
@@ -34,6 +37,7 @@ class ChatResponse(BaseModel):
     images: list[dict[str, Any]] = Field(default_factory=list)
     used_tool_calls: bool = False
     model: str = ""
+    provider: str = ""
 
 
 TOOLS: list[dict[str, Any]] = [
@@ -134,15 +138,6 @@ TOOLS: list[dict[str, Any]] = [
 ]
 
 
-def _headers() -> dict[str, str]:
-    if not settings.bothub_api_key:
-        raise RuntimeError("BOTHUB_API_KEY is empty. Fill .env before chatting with the model.")
-    return {
-        "Authorization": f"Bearer {settings.bothub_api_key}",
-        "Content-Type": "application/json",
-    }
-
-
 def _latest_user_text(messages: list[ChatMessage]) -> str:
     for message in reversed(messages):
         if message.role == "user":
@@ -211,29 +206,14 @@ async def _execute_tool(name: str, arguments: str) -> str:
     return json.dumps({"error": f"Unknown tool {name}"}, ensure_ascii=False)
 
 
-async def _post_chat(payload: dict[str, Any]) -> dict[str, Any]:
-    async with httpx.AsyncClient(timeout=120) as client:
-        response = await client.post(settings.chat_completions_url, headers=_headers(), json=payload)
-        response.raise_for_status()
-        return response.json()
-
-
 def _extract_text(data: dict[str, Any]) -> str:
-    choices = data.get("choices") or []
-    if not choices:
-        return ""
-    message = choices[0].get("message") or {}
-    content = message.get("content")
-    if isinstance(content, str):
-        return content
-    if isinstance(content, list):
-        return "\n".join(part.get("text", "") for part in content if isinstance(part, dict))
-    return ""
+    return extract_openai_text(data)
 
 
 async def answer(request: ChatRequest) -> ChatResponse:
-    if not settings.bothub_model:
-        raise RuntimeError("BOTHUB_MODEL is empty. Fill .env with the model id you want to use.")
+    provider = get_provider(request.provider)
+    if not provider.configured:
+        raise RuntimeError(f"{provider.label} is not configured. Fill .env API key and model for this provider.")
     query = _latest_user_text(request.messages)
     context, sources = build_context(query, limit=request.top_k)
     external_sources = await search_external(
@@ -246,27 +226,25 @@ async def answer(request: ChatRequest) -> ChatResponse:
     images = search_images(query, limit=6)
     messages = _prepare_messages(request, context, external_context)
     use_tools = settings.enable_model_tools if request.use_tool_calls is None else request.use_tool_calls
-    payload: dict[str, Any] = {
-        "model": settings.bothub_model,
-        "messages": messages,
-        "temperature": 0.2,
-    }
-    if use_tools:
-        payload["tools"] = TOOLS
-        payload["tool_choice"] = "auto"
+    model_tools = TOOLS if use_tools and provider.supports_tools else None
     try:
-        data = await _post_chat(payload)
+        data = await provider.chat(messages, tools=model_tools)
     except httpx.HTTPStatusError:
-        if not use_tools:
+        if not model_tools:
             raise
-        payload.pop("tools", None)
-        payload.pop("tool_choice", None)
-        data = await _post_chat(payload)
-        return ChatResponse(answer=_extract_text(data), sources=sources + external_sources, images=images, used_tool_calls=False, model=settings.bothub_model)
+        data = await provider.chat(messages, tools=None)
+        return ChatResponse(
+            answer=_extract_text(data),
+            sources=sources + external_sources,
+            images=images,
+            used_tool_calls=False,
+            model=provider.model,
+            provider=provider.id,
+        )
     choice = (data.get("choices") or [{}])[0]
     message = choice.get("message") or {}
     tool_calls = message.get("tool_calls") or []
-    if use_tools and tool_calls:
+    if model_tools and tool_calls:
         messages.append(message)
         for call in tool_calls:
             function = call.get("function") or {}
@@ -278,17 +256,20 @@ async def answer(request: ChatRequest) -> ChatResponse:
                     "content": await _execute_tool(function.get("name", ""), function.get("arguments", "{}")),
                 }
             )
-        final_payload = {
-            "model": settings.bothub_model,
-            "messages": messages,
-            "temperature": 0.2,
-        }
-        final_data = await _post_chat(final_payload)
+        final_data = await provider.chat(messages, tools=None)
         return ChatResponse(
             answer=_extract_text(final_data),
             sources=sources + external_sources,
             images=images,
             used_tool_calls=True,
-            model=settings.bothub_model,
+            model=provider.model,
+            provider=provider.id,
         )
-    return ChatResponse(answer=_extract_text(data), sources=sources + external_sources, images=images, used_tool_calls=False, model=settings.bothub_model)
+    return ChatResponse(
+        answer=_extract_text(data),
+        sources=sources + external_sources,
+        images=images,
+        used_tool_calls=False,
+        model=provider.model,
+        provider=provider.id,
+    )

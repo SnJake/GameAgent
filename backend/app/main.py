@@ -12,6 +12,7 @@ from .agent import ChatRequest, ChatResponse, answer
 from .config import ROOT_DIR, settings
 from .db import init_db
 from .indexer import git_pull_allowed_repo, rebuild_index
+from .llm import list_providers
 from .search import get_stats, image_path_by_id, load_memory, save_memory, search_documents, search_images
 from .web_search import search_brave, search_endfield_wiki, search_wikis
 
@@ -34,15 +35,28 @@ def startup() -> None:
 @app.get("/api/health")
 def health() -> dict[str, object]:
     stats = get_stats()
+    providers = list_providers()
+    active_provider = next((provider for provider in providers if provider.active), providers[0])
     return {
         "ok": True,
-        "model_configured": bool(settings.bothub_model and settings.bothub_api_key),
+        "model_configured": active_provider.configured,
         "base_url": settings.bothub_base_url,
+        "llm_provider": active_provider.id,
+        "llm_model": active_provider.model,
+        "providers": [provider.__dict__ for provider in providers],
         "wiki_search_enabled": settings.wiki_search_enabled,
         "endfield_wiki_search_enabled": settings.endfield_wiki_search_enabled,
         "web_search_enabled": settings.web_search_enabled,
         "brave_configured": bool(settings.brave_search_api_key),
         **stats,
+    }
+
+
+@app.get("/api/providers")
+def providers() -> dict[str, object]:
+    return {
+        "active": settings.llm_provider,
+        "providers": [provider.__dict__ for provider in list_providers()],
     }
 
 
