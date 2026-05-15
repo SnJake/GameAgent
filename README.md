@@ -151,7 +151,7 @@ For local servers without auth, leave `LOCAL_API_KEY` empty.
 
 The UI supports:
 
-- Russian / English language switch
+- Russian / English / Chinese / Japanese / Korean language switch
 - provider dropdown
 - model dropdown loaded from provider `/models`
 - model search
