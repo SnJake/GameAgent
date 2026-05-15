@@ -16,3 +16,4 @@ Token budget rules:
 - Use only relevant retrieved snippets.
 - Prefer tables or compact bullets for comparisons.
 - Ask one clarifying question only when the user query is ambiguous enough to change the answer.
+- Do not print internal search queries, tool names, pseudo tool calls, or angle-bracket planning notes such as "<Search ...>".

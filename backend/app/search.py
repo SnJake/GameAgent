@@ -6,7 +6,7 @@ from typing import Any
 
 from .config import settings
 from .db import get_db, init_db
-from .text import clean_text, fts_query, truncate
+from .text import TOKEN_RE, clean_text, fts_query, truncate
 
 
 def _row_to_doc(row: sqlite3.Row) -> dict[str, Any]:
@@ -30,10 +30,14 @@ def search_documents(query: str, category: str | None = None, limit: int = 8) ->
         return []
     params: list[Any] = [match]
     where = "documents_fts MATCH ?"
+    query_lower = query.lower()
+    query_tokens = [token.lower() for token in TOKEN_RE.findall(query) if len(token) > 1]
     if category:
         where += " AND d.category = ?"
         params.append(category)
-    params.append(max(1, min(limit, 30)))
+    fetch_limit = max(10, min(limit * 4, 80))
+    params.append(fetch_limit)
+    supplemental: list[dict[str, Any]] = []
     with get_db() as conn:
         rows = conn.execute(
             f"""
@@ -49,7 +53,84 @@ def search_documents(query: str, category: str | None = None, limit: int = 8) ->
             """,
             params,
         ).fetchall()
-    return [_row_to_doc(row) for row in rows]
+        if not category:
+            operator_matches = conn.execute(
+                """
+                SELECT id, source, language, category, external_id, title, body, path
+                FROM documents
+                WHERE category = 'operator'
+                  AND (
+                    lower(title) IN ({})
+                    OR lower(external_id) IN ({})
+                  )
+                LIMIT 8
+                """.format(
+                    ",".join("?" for _ in query_tokens) or "''",
+                    ",".join("?" for _ in query_tokens) or "''",
+                ),
+                [*query_tokens, *query_tokens],
+            ).fetchall() if query_tokens else []
+            for operator in operator_matches:
+                operator_doc = _row_to_doc(operator) | {"rank": -25}
+                if "profession: token" in operator_doc["body"].lower():
+                    operator_doc["rank"] = -10
+                supplemental.append(operator_doc)
+                related = conn.execute(
+                    """
+                    SELECT id, source, language, category, external_id, title, body, path
+                    FROM documents
+                    WHERE category IN ('skill', 'talent')
+                      AND external_id LIKE ?
+                    LIMIT 12
+                    """,
+                    (f"{operator['external_id']}:%",),
+                ).fetchall()
+                for row in related:
+                    supplemental.append(_row_to_doc(row) | {"rank": -18})
+    docs = [_row_to_doc(row) | {"rank": row["rank"]} for row in rows]
+    docs.extend(supplemental)
+    category_boost = {"operator": -7, "skill": -6, "talent": -5, "enemy": -3, "item": -2, "stage": -2, "lore": 2}
+
+    def score(doc: dict[str, Any]) -> float:
+        value = float(doc.get("rank") or 0)
+        title = str(doc["title"]).lower()
+        external_id = str(doc["external_id"]).lower()
+        if query_lower == title or query_lower == external_id:
+            value -= 20
+        elif query_lower in title:
+            value -= 10
+        elif query_lower in external_id:
+            value -= 8
+        for token in query_tokens:
+            if token == title:
+                value -= 18
+            elif token in title:
+                value -= 10
+            if token in external_id:
+                value -= 6
+        value += category_boost.get(str(doc["category"]), 0)
+        if doc["source"] in {"gamedata_en", "story_en"}:
+            value -= 1
+        if doc["language"] == "en":
+            value -= 0.5
+        if str(doc["external_id"]).lower().startswith("token_"):
+            value += 20
+        if "profession: token" in str(doc["body"]).lower():
+            value += 6
+        return value
+
+    deduped: list[dict[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+    for doc in sorted(docs, key=score):
+        key = (str(doc["category"]), str(doc["external_id"]))
+        if key in seen:
+            continue
+        seen.add(key)
+        doc.pop("rank", None)
+        deduped.append(doc)
+        if len(deduped) >= max(1, min(limit, 30)):
+            break
+    return deduped
 
 
 def search_images(query: str, limit: int = 12) -> list[dict[str, Any]]:
@@ -90,7 +171,16 @@ def build_context(query: str, *, limit: int | None = None, max_chars: int | None
     used = 0
     budget = max_chars or settings.max_context_chars
     for index, doc in enumerate(docs, start=1):
-        body = truncate(doc["body"], 1100)
+        per_doc_limit = {
+            "operator": 2800,
+            "skill": 4200,
+            "talent": 2800,
+            "enemy": 1800,
+            "item": 1500,
+            "stage": 1500,
+            "lore": 1300,
+        }.get(str(doc["category"]), 1600)
+        body = truncate(doc["body"], per_doc_limit)
         entry = (
             f"[{index}] {doc['category']} | {doc['title']} | {doc['source']}:{doc['path'] or doc['external_id']}\n"
             f"{body}"

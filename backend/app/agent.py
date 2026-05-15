@@ -57,7 +57,7 @@ TOOLS: list[dict[str, Any]] = [
                     "query": {"type": "string"},
                     "category": {
                         "type": "string",
-                        "enum": ["operator", "enemy", "item", "stage", "lore"],
+                    "enum": ["operator", "skill", "talent", "enemy", "item", "stage", "lore"],
                     },
                     "limit": {"type": "integer", "minimum": 1, "maximum": 12},
                 },

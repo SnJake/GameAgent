@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sqlite3
 import subprocess
 from dataclasses import dataclass
@@ -11,6 +12,9 @@ from typing import Any, Iterable
 from .config import settings
 from .db import connect, init_db, reset_index_tables
 from .text import chunk_text, clean_text, compact_join, truncate
+
+
+PLACEHOLDER_RE = re.compile(r"\{([^{}:]+)(?::([^{}]+))?\}")
 
 
 @dataclass(frozen=True)
@@ -75,6 +79,56 @@ def _iter_sources() -> Iterable[SourceRoot]:
             yield source
 
 
+def _blackboard_dict(level: dict[str, Any]) -> dict[str, float | str]:
+    result: dict[str, float | str] = {}
+    for item in level.get("blackboard") or []:
+        if not isinstance(item, dict) or not item.get("key"):
+            continue
+        result[str(item["key"])] = item.get("valueStr") if item.get("valueStr") is not None else item.get("value")
+    return result
+
+
+def _format_blackboard_value(value: float | str | None, fmt: str | None = None) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value
+    if fmt and "%" in fmt:
+        decimals = 0
+        match = re.search(r"\.(\d+)", fmt)
+        if match:
+            decimals = int(match.group(1))
+        return f"{value * 100:.{decimals}f}%"
+    if float(value).is_integer():
+        return str(int(value))
+    return f"{value:g}"
+
+
+def _resolve_description(description: Any, blackboard: dict[str, float | str]) -> str:
+    text = clean_text(description)
+
+    def replace(match: re.Match[str]) -> str:
+        key = match.group(1)
+        fmt = match.group(2)
+        if key not in blackboard:
+            return match.group(0)
+        return _format_blackboard_value(blackboard.get(key), fmt)
+
+    return PLACEHOLDER_RE.sub(replace, text)
+
+
+def _level_label(index: int, total: int) -> str:
+    if total >= 10 and index >= total - 2:
+        return f"M{index - (total - 3)}"
+    return f"Level {index}"
+
+
+def _blackboard_summary(blackboard: dict[str, float | str]) -> str:
+    if not blackboard:
+        return ""
+    return ", ".join(f"{key}={_format_blackboard_value(value)}" for key, value in blackboard.items())
+
+
 def _skill_summary(skill_id: str, skill_table: dict[str, Any]) -> str:
     skill = skill_table.get(skill_id) or {}
     levels = skill.get("levels") or []
@@ -83,8 +137,70 @@ def _skill_summary(skill_id: str, skill_table: dict[str, Any]) -> str:
     first = levels[0] or {}
     last = levels[-1] or first
     name = clean_text(first.get("name") or last.get("name") or skill_id)
-    desc = clean_text(last.get("description") or first.get("description") or "")
+    blackboard = _blackboard_dict(last)
+    desc = _resolve_description(last.get("description") or first.get("description") or "", blackboard)
     return compact_join([name, desc], ": ")
+
+
+def _skill_detail(skill_id: str, skill_table: dict[str, Any], operator_name: str) -> tuple[str, str]:
+    skill = skill_table.get(skill_id) or {}
+    levels = skill.get("levels") or []
+    if not levels:
+        return skill_id, skill_id
+    first = levels[0] or {}
+    title = clean_text(first.get("name") or skill_id)
+    lines = [f"Operator: {operator_name}", f"Skill: {title}", f"Skill ID: {skill_id}"]
+    total = len(levels)
+    for index, level in enumerate(levels, start=1):
+        if not isinstance(level, dict):
+            continue
+        blackboard = _blackboard_dict(level)
+        desc = _resolve_description(level.get("description"), blackboard)
+        sp_data = level.get("spData") or {}
+        skill_type = level.get("skillType")
+        duration = level.get("duration")
+        details = compact_join(
+            [
+                _level_label(index, total),
+                f"SP type: {sp_data.get('spType')}" if sp_data else "",
+                f"SP cost: {sp_data.get('spCost')}" if sp_data else "",
+                f"Initial SP: {sp_data.get('initSp')}" if sp_data else "",
+                f"Duration: {duration}" if duration not in (None, -1) else "",
+                f"Skill type: {skill_type}" if skill_type else "",
+            ],
+            ", ",
+        )
+        lines.append(f"{details}: {desc}")
+        if blackboard:
+            lines.append(f"{_level_label(index, total)} values: {_blackboard_summary(blackboard)}")
+    return title, "\n".join(lines)
+
+
+def _talent_lines(char: dict[str, Any], operator_name: str) -> list[str]:
+    result: list[str] = []
+    for talent_index, talent in enumerate(char.get("talents") or [], start=1):
+        if not isinstance(talent, dict):
+            continue
+        candidates = talent.get("candidates") or []
+        for candidate in candidates:
+            if not isinstance(candidate, dict) or candidate.get("isHideTalent"):
+                continue
+            name = clean_text(candidate.get("name") or f"Talent {talent_index}")
+            blackboard = _blackboard_dict(candidate)
+            desc = _resolve_description(candidate.get("description"), blackboard)
+            unlock = candidate.get("unlockCondition") or {}
+            potential = candidate.get("requiredPotentialRank")
+            label = compact_join(
+                [
+                    f"Talent {talent_index}: {name}",
+                    f"phase {unlock.get('phase')} level {unlock.get('level')}" if unlock else "",
+                    f"potential {potential}" if potential is not None else "",
+                ],
+                ", ",
+            )
+            values = f" Values: {_blackboard_summary(blackboard)}" if blackboard else ""
+            result.append(f"{label}. {desc}.{values}")
+    return result
 
 
 def _index_characters(conn: sqlite3.Connection, source: SourceRoot) -> int:
@@ -100,10 +216,16 @@ def _index_characters(conn: sqlite3.Connection, source: SourceRoot) -> int:
             continue
         name = char.get("name") or char_id
         skills = []
+        skill_documents: list[tuple[str, str, str]] = []
+        seen_skill_ids: set[str] = set()
         for entry in char.get("skills") or []:
             skill_id = entry.get("skillId") if isinstance(entry, dict) else None
-            if skill_id:
+            if skill_id and skill_id not in seen_skill_ids:
+                seen_skill_ids.add(skill_id)
                 skills.append(_skill_summary(skill_id, skill_table))
+                skill_title, skill_body = _skill_detail(skill_id, skill_table, name)
+                skill_documents.append((skill_id, skill_title, skill_body))
+        talents = _talent_lines(char, name)
         phases = char.get("phases") or []
         costs = []
         for phase in phases:
@@ -135,6 +257,7 @@ def _index_characters(conn: sqlite3.Connection, source: SourceRoot) -> int:
                 f"Description: {char.get('description')}",
                 f"Usage: {char.get('itemUsage')}",
                 f"Profile: {char.get('itemDesc')}",
+                "Talents: " + " | ".join(talents[:8]) if talents else "",
                 "Skills: " + " | ".join(skills[:4]) if skills else "",
                 "Stats: " + " | ".join(costs[-2:]) if costs else "",
             ]
@@ -151,6 +274,32 @@ def _index_characters(conn: sqlite3.Connection, source: SourceRoot) -> int:
             extra={"profession": char.get("profession"), "rarity": char.get("rarity")},
         )
         count += 1
+        for skill_id, skill_title, skill_body in skill_documents:
+            _insert_document(
+                conn,
+                source=source.name,
+                language=source.language,
+                category="skill",
+                external_id=f"{char_id}:{skill_id}",
+                title=f"{name} / {skill_title}",
+                body=skill_body,
+                path=_rel(skill_path, source.path),
+                extra={"operator_id": char_id, "skill_id": skill_id},
+            )
+            count += 1
+        if talents:
+            _insert_document(
+                conn,
+                source=source.name,
+                language=source.language,
+                category="talent",
+                external_id=f"{char_id}:talents",
+                title=f"{name} / Talents",
+                body="\n".join([f"Operator: {name}", f"ID: {char_id}", *talents]),
+                path=_rel(char_path, source.path),
+                extra={"operator_id": char_id},
+            )
+            count += 1
     return count
 
 
