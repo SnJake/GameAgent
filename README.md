@@ -13,6 +13,11 @@ The app includes:
 - external wiki/web search
 - configurable LLM providers
 
+# Examples
+
+<img width="2560" height="1271" alt="Example 2" src="https://github.com/user-attachments/assets/08b46dbd-a0a3-403e-ac87-f8beb0bd2897" />
+<img width="2560" height="1271" alt="Example 1" src="https://github.com/user-attachments/assets/7285d47b-eab9-4bd7-95da-3e133f8f4dc7" />
+
 ## Supported LLM Providers
 
 Configured from `.env`, selectable in the UI:
