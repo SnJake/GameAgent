@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Design variants · DB GameAgent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Source+Serif+4:wght@500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <style>
+    :root[data-theme="dark"] {
+      --bg: #0a0a0e;
+      --bg-grad:
+        radial-gradient(60% 50% at 20% 10%, rgba(125,138,234,0.10), transparent 60%),
+        radial-gradient(60% 50% at 80% 90%, rgba(20,184,212,0.07), transparent 60%);
+      --panel: #131318;
+      --panel-2: #1a1a21;
+      --panel-3: #22222a;
+      --border: rgba(255,255,255,0.08);
+      --border-strong: rgba(255,255,255,0.16);
+      --text: #ededee;
+      --text-soft: #b8b8c2;
+      --text-muted: #8a8a94;
+      --text-dim: #5a5a64;
+      color-scheme: dark;
+    }
+    :root[data-theme="light"] {
+      --bg: #f6f6f9;
+      --bg-grad:
+        radial-gradient(60% 50% at 20% 10%, rgba(94,106,210,0.08), transparent 60%),
+        radial-gradient(60% 50% at 80% 90%, rgba(8,145,178,0.05), transparent 60%);
+      --panel: #ffffff;
+      --panel-2: #f4f4f7;
+      --panel-3: #ededf0;
+      --border: rgba(20,20,40,0.08);
+      --border-strong: rgba(20,20,40,0.14);
+      --text: #1a1a22;
+      --text-soft: #444452;
+      --text-muted: #6a6a76;
+      --text-dim: #9a9aa6;
+      color-scheme: light;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      font-family: Inter, system-ui, sans-serif;
+      background: var(--bg);
+      background-image: var(--bg-grad);
+      background-attachment: fixed;
+      color: var(--text);
+      font-size: 14px; line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+    .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+    .serif { font-family: 'Source Serif 4', Georgia, serif; }
+
+    .header {
+      display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 16px;
+      padding: 18px 28px;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .brand-mark {
+      width: 38px; height: 38px; border-radius: 11px; flex-shrink: 0;
+      background: linear-gradient(135deg, #d63384 0%, #6e54e0 50%, #1f8fd0 100%);
+      color: #fff; display: grid; place-items: center;
+      box-shadow: 0 6px 20px rgba(214,51,132,0.30), inset 0 1px 0 rgba(255,255,255,0.25);
+    }
+    .brand-title { font-family: 'Source Serif 4', serif; font-size: 19px; font-weight: 600; letter-spacing: -0.02em; }
+    .brand-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    .theme-switcher {
+      display: flex; gap: 1px; background: var(--panel-2); border-radius: 9px; padding: 3px;
+      border: 1px solid var(--border); flex-shrink: 0;
+    }
+    .theme-switcher button {
+      padding: 6px 12px; border-radius: 6px; border: 0; background: transparent;
+      color: var(--text-muted); cursor: pointer; font-size: 12px; font-weight: 500;
+      font: inherit; font-size: 12px;
+    }
+    .theme-switcher button.active { background: var(--panel); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.20); }
+
+    .hero {
+      max-width: 1180px; margin: 0 auto;
+      padding: 40px 28px 24px;
+    }
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 5px 11px 5px 9px; border-radius: 999px;
+      background: var(--panel); border: 1px solid var(--border);
+      font-size: 12px; color: var(--text-soft);
+    }
+    .hero-eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: linear-gradient(135deg, #d63384, #6e54e0); }
+    .hero h1 {
+      font-family: 'Source Serif 4', serif;
+      font-size: clamp(28px, 4vw, 44px); font-weight: 500; letter-spacing: -0.03em;
+      margin: 16px 0 10px; line-height: 1.05;
+      max-width: 800px;
+    }
+    .hero h1 em {
+      font-style: italic;
+      background: linear-gradient(135deg, #d63384 0%, #6e54e0 50%, #1f8fd0 100%);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .hero p {
+      font-size: 15px; color: var(--text-muted); max-width: 720px; margin: 0; line-height: 1.6;
+    }
+    .hero code.k { background: var(--panel-2); padding: 1px 6px; border-radius: 5px; border: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.86em; }
+
+    .grid {
+      max-width: 1180px; margin: 0 auto; padding: 20px 28px 60px;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;
+    }
+
+    .card {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
+      overflow: hidden; position: relative;
+      transition: transform 220ms cubic-bezier(0.16,1,0.3,1), border-color 220ms ease, box-shadow 220ms ease;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+      display: grid; grid-template-rows: auto 1fr auto;
+    }
+    .card:hover { transform: translateY(-3px); border-color: var(--border-strong); box-shadow: 0 16px 40px rgba(0,0,0,0.15); }
+
+    /* Visual swatch instead of iframe */
+    .swatch {
+      aspect-ratio: 16 / 9;
+      position: relative; overflow: hidden;
+      border-bottom: 1px solid var(--border);
+    }
+    .swatch::before {
+      content: ""; position: absolute; inset: 0;
+      background-size: cover; background-position: center;
+    }
+    .swatch[data-id="atlas"]::before {
+      background:
+        radial-gradient(70% 50% at 30% 0%, rgba(196,90,60,0.20), transparent 60%),
+        linear-gradient(135deg, #f7f4ed 0%, #efe8d8 50%, #ddd1b6 100%);
+    }
+    .swatch[data-id="halo"]::before {
+      background:
+        radial-gradient(60% 50% at 20% 10%, rgba(95,199,255,0.18), transparent 60%),
+        radial-gradient(60% 50% at 80% 80%, rgba(159,122,255,0.18), transparent 60%),
+        linear-gradient(135deg, #060a14 0%, #0e1424 50%, #0a1828 100%);
+    }
+    .swatch[data-id="pulse"]::before {
+      background:
+        linear-gradient(180deg, #08080b 0%, #0c0c10 100%);
+    }
+    .swatch[data-id="pulse"]::after {
+      content: ""; position: absolute; inset: 0;
+      background-image:
+        linear-gradient(to right, rgba(125,138,234,0.06) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(125,138,234,0.06) 1px, transparent 1px);
+      background-size: 16px 16px;
+    }
+    .swatch[data-id="synth"]::before {
+      background:
+        radial-gradient(60% 50% at 30% 0%, rgba(20,184,212,0.12), transparent 60%),
+        linear-gradient(135deg, #0a0a0c 0%, #101015 50%, #14161c 100%);
+    }
+    .swatch[data-id="atelier"]::before {
+      background:
+        radial-gradient(60% 50% at 20% 10%, rgba(214,51,132,0.18), transparent 60%),
+        radial-gradient(60% 50% at 90% 30%, rgba(110,84,224,0.18), transparent 60%),
+        radial-gradient(60% 70% at 100% 100%, rgba(31,143,208,0.18), transparent 60%),
+        linear-gradient(135deg, #fdfbff 0%, #f3eef9 100%);
+    }
+
+    .swatch-inner {
+      position: absolute; inset: 0; padding: 20px;
+      display: flex; flex-direction: column; justify-content: space-between;
+      z-index: 1;
+    }
+    .swatch-title { font-family: 'Source Serif 4', serif; font-size: 30px; font-weight: 600; letter-spacing: -0.025em; line-height: 1.05; }
+    .swatch-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .swatch-chip {
+      padding: 3px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 600;
+      background: rgba(20,20,30,0.55); color: #fff;
+      backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.12);
+    }
+    .swatch-num {
+      position: absolute; top: 16px; right: 18px;
+      font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 3px 9px; border-radius: 5px;
+      background: rgba(20,20,30,0.55); color: #fff;
+      backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.12);
+    }
+    .swatch[data-id="atlas"] .swatch-title,
+    .swatch[data-id="atelier"] .swatch-title { color: #2a2620; }
+    .swatch[data-id="atlas"] .swatch-chip,
+    .swatch[data-id="atlas"] .swatch-num,
+    .swatch[data-id="atelier"] .swatch-chip,
+    .swatch[data-id="atelier"] .swatch-num { background: rgba(255,255,255,0.65); color: #2a2620; border-color: rgba(20,20,30,0.10); }
+
+    .card-body { padding: 16px 18px 18px; display: grid; gap: 8px; }
+    .card-row1 { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .card-name { font-family: 'Source Serif 4', serif; font-size: 18px; font-weight: 600; letter-spacing: -0.02em; }
+    .card-tag { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--text-muted); }
+    .card-desc { font-size: 12.5px; color: var(--text-muted); margin: 0; line-height: 1.55; }
+    .card-feats { display: flex; flex-wrap: wrap; gap: 4px; }
+    .feat {
+      padding: 2px 8px; border-radius: 999px;
+      background: var(--panel-2); border: 1px solid var(--border);
+      font-size: 10.5px; color: var(--text-soft);
+    }
+
+    .card-foot { padding: 12px 18px 16px; border-top: 1px solid var(--border); }
+    .btn-open {
+      width: 100%; padding: 9px 12px; border-radius: 9px;
+      background: var(--text); color: var(--bg); border: 0; cursor: pointer;
+      font-weight: 600; font-size: 13px; font: inherit; font-size: 13px; font-weight: 600;
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      transition: filter 120ms ease;
+    }
+    .btn-open:hover { filter: brightness(0.92); }
+
+    .footer {
+      max-width: 1180px; margin: 0 auto; padding: 16px 28px 60px;
+      color: var(--text-dim); font-size: 12px;
+    }
+    .footer .row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; padding-top: 20px; border-top: 1px solid var(--border); }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 6v6c0 5 3.5 9.5 8 10 4.5-.5 8-5 8-10V6l-8-4z"/><path d="M9 12l2 2 4-4"/></svg>
+      </div>
+      <div style="min-width:0;">
+        <div class="brand-title">DB GameAgent</div>
+        <div class="brand-sub mono" data-i18n="launcherPickStyle">Pick a style</div>
+      </div>
+    </div>
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
+      <select id="lang-select" style="padding:6px 22px 6px 10px;border-radius:8px;background:var(--panel-2);border:1px solid var(--border);color:var(--text);font-size:12px;outline:none;cursor:pointer;appearance:none;font-family:'JetBrains Mono',monospace;background-image:url(&quot;data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%238a8a94' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>&quot;);background-repeat:no-repeat;background-position:right 7px center;">
+        <option value="en">EN</option><option value="ru">RU</option><option value="zh">ZH</option><option value="ja">JA</option><option value="ko">KO</option>
+      </select>
+      <div class="theme-switcher" id="theme-switcher">
+        <button data-theme-set="dark" data-i18n="themeDark">Dark</button>
+        <button data-theme-set="light" data-i18n="themeLight">Light</button>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <span class="hero-eyebrow"><span class="dot"></span><span data-i18n="launcherEyebrow">5 designs · 3 themes · 5 languages</span></span>
+    <h1 class="serif" data-i18n="launcherTitle">Pick your interface, your way.</h1>
+    <p data-i18n="launcherSubtitle">Each variant is a self-contained product. Three themes, five interface languages, resizable side panels, and adaptive breakpoints. Pick a style — your choice is remembered.</p>
+  </section>
+
+  <main class="grid">
+    <article class="card">
+      <div class="swatch" data-id="atlas">
+        <span class="swatch-num">01</span>
+        <div class="swatch-inner">
+          <div class="swatch-title serif">Atlas</div>
+          <div class="swatch-row">
+            <span class="swatch-chip">Anthropic-warm</span>
+            <span class="swatch-chip">Editorial serif</span>
+            <span class="swatch-chip">Cream &amp; amber</span>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-row1">
+          <div class="card-name serif">Atlas</div>
+          <div class="card-tag">claude · editorial</div>
+        </div>
+        <p class="card-desc" data-i18n="launcherAtlasDesc">Warm editorial aesthetic in the spirit of Anthropic Claude. Newsreader serif headings, cream tones, amber accent. Calm, premium feel for long analytical answers.</p>
+        <div class="card-feats">
+          <span class="feat">Newsreader serif</span><span class="feat">Warm cream</span><span class="feat">Step trace</span><span class="feat">Suggestion cards</span>
+        </div>
+      </div>
+      <div class="card-foot"><button class="btn-open" onclick="window.location.href='./atlas.html'"><span data-i18n="launcherOpen">Open</span> Atlas →</button></div>
+    </article>
+
+    <article class="card">
+      <div class="swatch" data-id="halo">
+        <span class="swatch-num">02</span>
+        <div class="swatch-inner">
+          <div class="swatch-title serif" style="color:#fff;">Halo</div>
+          <div class="swatch-row">
+            <span class="swatch-chip">visionOS</span>
+            <span class="swatch-chip">Spatial glass</span>
+            <span class="swatch-chip">Aqua + violet</span>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-row1">
+          <div class="card-name serif">Halo</div>
+          <div class="card-tag">vision-os · spatial</div>
+        </div>
+        <p class="card-desc" data-i18n="launcherHaloDesc">Spatial aesthetic in the spirit of Apple visionOS. Frosted glass, atmospheric depth, aqua accent, inner highlights. Three floating panels suspended in space.</p>
+        <div class="card-feats">
+          <span class="feat">visionOS glass</span><span class="feat">Inner highlights</span><span class="feat">Depth shadows</span><span class="feat">Light weights</span>
+        </div>
+      </div>
+      <div class="card-foot"><button class="btn-open" onclick="window.location.href='./halo.html'"><span data-i18n="launcherOpen">Open</span> Halo →</button></div>
+    </article>
+
+    <article class="card">
+      <div class="swatch" data-id="pulse">
+        <span class="swatch-num">03</span>
+        <div class="swatch-inner">
+          <div class="swatch-title serif" style="color:#ededee;">Pulse</div>
+          <div class="swatch-row">
+            <span class="swatch-chip">Linear · Vercel</span>
+            <span class="swatch-chip">Dense pro-tool</span>
+            <span class="swatch-chip">Plex Mono</span>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-row1">
+          <div class="card-name serif">Pulse</div>
+          <div class="card-tag">linear · dense</div>
+        </div>
+        <p class="card-desc" data-i18n="launcherPulseDesc">Dense pro-tool aesthetic in the spirit of Linear and Vercel. High density, fine lines, IBM Plex Mono for metadata, command palette, hot-keys for every action.</p>
+        <div class="card-feats">
+          <span class="feat">Linear-blue</span><span class="feat">Command palette</span><span class="feat">Mono metadata</span><span class="feat">Hot-keys</span>
+        </div>
+      </div>
+      <div class="card-foot"><button class="btn-open" onclick="window.location.href='./pulse.html'"><span data-i18n="launcherOpen">Open</span> Pulse →</button></div>
+    </article>
+
+    <article class="card">
+      <div class="swatch" data-id="synth">
+        <span class="swatch-num">04</span>
+        <div class="swatch-inner">
+          <div class="swatch-title serif" style="color:#fff;">Synth</div>
+          <div class="swatch-row">
+            <span class="swatch-chip">Cursor · v0</span>
+            <span class="swatch-chip">AI-native</span>
+            <span class="swatch-chip">Cyan</span>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-row1">
+          <div class="card-name serif">Synth</div>
+          <div class="card-tag">cursor · ai-native</div>
+        </div>
+        <p class="card-desc" data-i18n="launcherSynthDesc">AI-native dev tool in the spirit of Cursor and v0.dev. Navigation rail, titlebar with breadcrumbs, status bar, prompt composer with context meter and trace block for agent steps.</p>
+        <div class="card-feats">
+          <span class="feat">Nav rail</span><span class="feat">Step trace</span><span class="feat">JetBrains Mono</span><span class="feat">Token meter</span>
+        </div>
+      </div>
+      <div class="card-foot"><button class="btn-open" onclick="window.location.href='./synth.html'"><span data-i18n="launcherOpen">Open</span> Synth →</button></div>
+    </article>
+
+    <article class="card">
+      <div class="swatch" data-id="atelier">
+        <span class="swatch-num">05</span>
+        <div class="swatch-inner">
+          <div class="swatch-title serif">Atelier</div>
+          <div class="swatch-row">
+            <span class="swatch-chip">Stripe · Notion</span>
+            <span class="swatch-chip">Editorial</span>
+            <span class="swatch-chip">Gradient brand</span>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-row1">
+          <div class="card-name serif">Atelier</div>
+          <div class="card-tag">stripe · editorial</div>
+        </div>
+        <p class="card-desc" data-i18n="launcherAtelierDesc">Editorial aesthetic in the spirit of Stripe and Notion. Multi-stop gradient brand (pink → purple → blue), Source Serif, hero profile card with background glow.</p>
+        <div class="card-feats">
+          <span class="feat">Gradient brand</span><span class="feat">Source Serif</span><span class="feat">Hero profile</span><span class="feat">Premium shadows</span>
+        </div>
+      </div>
+      <div class="card-foot"><button class="btn-open" onclick="window.location.href='./atelier.html'"><span data-i18n="launcherOpen">Open</span> Atelier →</button></div>
+    </article>
+  </main>
+
+  <footer class="footer">
+    <div class="row">
+      <div data-i18n="launcherFooter">Use the style picker in any variant's header to switch on the fly. Theme + language persist between sessions.</div>
+      <div class="mono"><span data-i18n="launcherFooterRight">5 variants</span></div>
+    </div>
+  </footer>
+
+  <script src="./shared.js"></script>
+  <script>
+    const P = window.PREVIEW;
+    const initialTheme = P.getStored('preview-theme', 'dark');
+    const initialLang = P.getStored('preview-lang', 'en');
+    P.applyTheme(document.documentElement, initialTheme);
+    P.applyLang(document.documentElement, initialLang);
+
+    function syncThemeButtons(t) {
+      document.querySelectorAll('[data-theme-set]').forEach((x) => x.classList.toggle('active', x.dataset.themeSet === t));
+    }
+    syncThemeButtons(initialTheme);
+    document.querySelectorAll('[data-theme-set]').forEach((b) => {
+      b.addEventListener('click', () => {
+        const t = b.dataset.themeSet;
+        P.applyTheme(document.documentElement, t);
+        P.setStored('preview-theme', t);
+        syncThemeButtons(t);
+      });
+    });
+
+    const langSel = document.getElementById('lang-select');
+    langSel.value = initialLang;
+    langSel.addEventListener('change', (e) => {
+      const l = e.target.value;
+      P.applyLang(document.documentElement, l);
+      P.setStored('preview-lang', l);
+    });
+  </script>
+</body>
+</html>

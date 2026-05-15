@@ -1,0 +1,38 @@
+/* Shared splitter + collapsed-state styles for all preview variants. */
+.panel-splitter {
+  position: relative;
+  cursor: col-resize;
+  background: transparent;
+  z-index: 6;
+  touch-action: none;
+  user-select: none;
+  align-self: stretch;
+}
+.panel-splitter::before {
+  content: "";
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 2px; height: 36px; border-radius: 2px;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity 160ms ease, height 160ms ease;
+  pointer-events: none;
+}
+.panel-splitter:hover { background: rgba(127,127,140,0.10); }
+.panel-splitter:hover::before { opacity: 0.45; }
+.panel-splitter.dragging { background: rgba(127,127,140,0.16); }
+.panel-splitter.dragging::before { opacity: 0.70; height: 56px; }
+
+/* When a panel is collapsed, hide it via grid (rebuildGrid handles display:none, but extra safety). */
+[data-panel][data-collapsed="1"] { display: none !important; }
+
+/* Optional helper styles for collapse toggle button in topbars.
+   Variants can use these or roll their own. */
+.collapse-toggle {
+  width: 28px; height: 28px; border-radius: 7px;
+  display: grid; place-items: center;
+  background: transparent; border: 0; cursor: pointer;
+  color: var(--text-muted, #888); transition: background 120ms ease, color 120ms ease;
+}
+.collapse-toggle:hover { background: rgba(127,127,140,0.10); color: var(--text, #000); }
+.collapse-toggle[aria-pressed="true"] { color: var(--accent, #5e6ad2); background: rgba(94,106,210,0.10); }

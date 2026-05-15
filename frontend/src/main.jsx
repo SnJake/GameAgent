@@ -4,10 +4,13 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
   Bot,
+  Check,
   Database,
   Globe2,
   Image as ImageIcon,
+  Layers,
   MessageSquare,
+  Palette,
   Plus,
   RefreshCw,
   Search,
@@ -22,7 +25,33 @@ import './styles.css';
 const API = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8017';
 const STORAGE_KEY = 'db-gameagent-chats-v2';
 const LANG_KEY = 'db-gameagent-language';
+const UI_STYLE_KEY = 'db-gameagent-ui-style';
+const UI_STYLE_PICKED_KEY = 'db-gameagent-ui-style-picked';
+const THEME_KEY = 'db-gameagent-theme';
 const APP_NAME = 'DB GameAgent';
+
+const LANGUAGES = [
+  { id: 'ru', label: 'Русский' },
+  { id: 'en', label: 'English' },
+  { id: 'zh', label: '中文' },
+  { id: 'ja', label: '日本語' },
+  { id: 'ko', label: '한국어' }
+];
+
+const UI_STYLES = [
+  { id: 'foundry', key: 'styleFoundry', title: 'Foundry', meta: 'current tactical dark' },
+  { id: 'atlas', key: 'styleAtlas', title: 'Atlas', meta: 'warm editorial' },
+  { id: 'halo', key: 'styleHalo', title: 'Halo', meta: 'spatial glass' },
+  { id: 'pulse', key: 'stylePulse', title: 'Pulse', meta: 'dense pro-tool' },
+  { id: 'synth', key: 'styleSynth', title: 'Synth', meta: 'AI dev-tool' },
+  { id: 'atelier', key: 'styleAtelier', title: 'Atelier', meta: 'editorial gradient' }
+];
+
+const THEMES = [
+  { id: 'dark', key: 'themeDark' },
+  { id: 'graphite', key: 'themeGraphite' },
+  { id: 'light', key: 'themeLight' }
+];
 
 const I18N = {
   ru: {
@@ -131,15 +160,298 @@ const I18N = {
   }
 };
 
+const UI_I18N = {
+  ru: {
+    style: 'Стиль',
+    theme: 'Тема',
+    styleFoundry: 'Foundry · текущий тактический',
+    styleAtlas: 'Atlas · теплый editorial',
+    styleHalo: 'Halo · spatial glass',
+    stylePulse: 'Pulse · плотный pro-tool',
+    styleSynth: 'Synth · AI dev-tool',
+    styleAtelier: 'Atelier · editorial gradient',
+    themeDark: 'Темная',
+    themeGraphite: 'Графит',
+    themeLight: 'Светлая',
+    user: 'Вы',
+    agent: 'Агент',
+    chooseStyleTitle: 'Выбери интерфейс',
+    chooseStyleSubtitle: 'Выбор сохранится для следующих запусков. Потом стиль, тему и язык можно менять в шапке или настройках.',
+    chooseStyleHint: 'Сохранится один раз при запуске',
+    openStyle: 'Открыть',
+    launchFoundryDesc: 'Текущий стиль проекта: темная рабочая среда, янтарный акцент, плотные панели и спокойная читаемость.',
+    launchAtlasDesc: 'Теплая editorial-эстетика из preview с кремовыми тонами и мягким ритмом для длинных ответов.',
+    launchHaloDesc: 'Spatial glass: стеклянные панели, глубина, аква-акцент и более воздушная композиция.',
+    launchPulseDesc: 'Плотный pro-tool в духе Linear/Vercel: тонкие линии, строгая сетка и высокая информационная плотность.',
+    launchSynthDesc: 'AI dev-tool: контрастный workspace, cyan-акцент и инженерный характер интерфейса.',
+    launchAtelierDesc: 'Editorial gradient: светящаяся брендовая подача с градиентным акцентом и мягкими поверхностями.'
+  },
+  en: {
+    style: 'Style',
+    theme: 'Theme',
+    styleFoundry: 'Foundry · current tactical',
+    styleAtlas: 'Atlas · warm editorial',
+    styleHalo: 'Halo · spatial glass',
+    stylePulse: 'Pulse · dense pro-tool',
+    styleSynth: 'Synth · AI dev-tool',
+    styleAtelier: 'Atelier · editorial gradient',
+    themeDark: 'Dark',
+    themeGraphite: 'Graphite',
+    themeLight: 'Light',
+    user: 'You',
+    agent: 'Agent',
+    chooseStyleTitle: 'Choose your interface',
+    chooseStyleSubtitle: 'The choice is saved for future launches. You can still change style, theme, and language from the header or settings.',
+    chooseStyleHint: 'Saved once at launch',
+    openStyle: 'Open',
+    launchFoundryDesc: 'The current project style: dark tactical workspace, amber accent, dense panels, and calm readability.',
+    launchAtlasDesc: 'Warm editorial preview aesthetic with cream tones and a softer rhythm for long answers.',
+    launchHaloDesc: 'Spatial glass: frosted panels, depth, aqua accents, and a more atmospheric composition.',
+    launchPulseDesc: 'Dense pro-tool in the spirit of Linear/Vercel: fine lines, strict grid, and high information density.',
+    launchSynthDesc: 'AI dev-tool: high-contrast workspace, cyan accent, and an engineering-focused feel.',
+    launchAtelierDesc: 'Editorial gradient: luminous brand treatment with gradient accents and soft surfaces.'
+  },
+  zh: {
+    welcome: '欢迎。你可以询问干员、物品、敌人、关卡或剧情。如果数据库为空，请先重建索引。',
+    newChat: '新对话',
+    emptyAnswer: '模型返回为空。',
+    error: '错误',
+    connected: '模型已连接',
+    needEnv: '需要在 .env 中配置密钥和模型',
+    chats: '对话',
+    requests: '次请求',
+    deleteChat: '删除对话',
+    documents: '文档',
+    images: '图片',
+    rebuilding: '正在索引',
+    rebuildIndex: '重建索引',
+    settings: '设置',
+    language: '语言',
+    provider: 'LLM 提供商',
+    model: '模型',
+    modelSearch: '搜索模型',
+    loadingModels: '正在加载模型...',
+    noModels: '模型列表不可用，将使用 .env 或手动输入的模型。',
+    manualModel: '手动模型',
+    memory: '用户记忆',
+    tools: '模型工具调用',
+    akWiki: 'Arknights Wiki 搜索',
+    endfieldWiki: 'Endfield Wiki 搜索',
+    brave: 'Brave 网页搜索',
+    sourcesLimit: '来源数量',
+    contextChars: '上下文字符',
+    historyMessages: '历史消息',
+    temperature: '温度',
+    memoryTitle: '记忆',
+    memoryEmpty: '暂时为空。',
+    eyebrow: '本地索引 + 外部来源 + 云端或本地模型',
+    chatTitle: '游戏数据库聊天',
+    searching: '正在搜索索引并调用模型...',
+    placeholder: '例如：按剧情比较 Amiya 和 Kal\'tsit，或查找 D32 Steel 材料',
+    send: '发送',
+    quickSearch: '快速搜索',
+    search: '搜索',
+    answerSources: '回答来源',
+    sourcesEmpty: '回答或搜索后会显示来源。',
+    imageTitle: '图片',
+    imagesEmpty: '请求后会显示相关图片。',
+    indexUpdated: '索引已更新：{documents} 个文档，{images} 张图片。',
+    loadingProviders: '正在加载提供商...',
+    notConfigured: '未配置',
+    keyOk: '密钥正常',
+    noKey: '无密钥',
+    on: '开',
+    off: '关',
+    user: '你',
+    style: '风格',
+    theme: '主题',
+    styleFoundry: 'Foundry · 当前战术风',
+    styleAtlas: 'Atlas · 温暖编辑风',
+    styleHalo: 'Halo · 空间玻璃',
+    stylePulse: 'Pulse · 紧凑专业',
+    styleSynth: 'Synth · AI 开发工具',
+    styleAtelier: 'Atelier · 编辑渐变',
+    themeDark: '深色',
+    themeGraphite: '石墨',
+    themeLight: '浅色',
+    chooseStyleTitle: '选择界面',
+    chooseStyleSubtitle: '选择会为以后启动保存。之后仍可在顶部或设置中修改风格、主题和语言。',
+    chooseStyleHint: '首次启动保存',
+    openStyle: '打开',
+    launchFoundryDesc: '项目当前风格：深色战术工作区、琥珀强调色、紧凑面板和稳定可读性。',
+    launchAtlasDesc: '来自 preview 的温暖编辑风，奶油色调和更柔和的长回答节奏。',
+    launchHaloDesc: '空间玻璃：磨砂面板、深度、青色强调和更轻盈的构图。',
+    launchPulseDesc: 'Linear/Vercel 风格的紧凑专业工具：细线、严格网格和高信息密度。',
+    launchSynthDesc: 'AI 开发工具：高对比工作区、青色强调和工程化气质。',
+    launchAtelierDesc: '编辑渐变：发光品牌感、渐变强调和柔和表面。'
+  },
+  ja: {
+    welcome: 'ようこそ。オペレーター、アイテム、敵、ステージ、ストーリーについて質問できます。データベースが空なら、まずインデックスを再構築してください。',
+    newChat: '新規チャット',
+    emptyAnswer: 'モデルの応答が空です。',
+    error: 'エラー',
+    connected: 'モデル接続済み',
+    needEnv: '.env にキーとモデルを設定してください',
+    chats: 'チャット',
+    requests: '件のリクエスト',
+    deleteChat: 'チャットを削除',
+    documents: 'ドキュメント',
+    images: '画像',
+    rebuilding: '索引作成中',
+    rebuildIndex: 'インデックス再構築',
+    settings: '設定',
+    language: '言語',
+    provider: 'LLM プロバイダー',
+    model: 'モデル',
+    modelSearch: 'モデルを検索',
+    loadingModels: 'モデルを読み込み中...',
+    noModels: 'モデル一覧を取得できません。.env または手動入力のモデルを使用します。',
+    manualModel: '手動モデル',
+    memory: 'ユーザーメモリ',
+    tools: 'モデルのツール呼び出し',
+    akWiki: 'Arknights Wiki 検索',
+    endfieldWiki: 'Endfield Wiki 検索',
+    brave: 'Brave Web 検索',
+    sourcesLimit: 'ソース数',
+    contextChars: 'コンテキスト文字数',
+    historyMessages: '履歴メッセージ',
+    temperature: '温度',
+    memoryTitle: 'メモリ',
+    memoryEmpty: 'まだ空です。',
+    eyebrow: 'ローカル索引 + 外部ソース + クラウドまたはローカルモデル',
+    chatTitle: 'ゲームデータベースチャット',
+    searching: '索引を検索してモデルを呼び出しています...',
+    placeholder: '例: Amiya と Kal\'tsit をストーリーで比較、または D32 Steel の素材を探す',
+    send: '送信',
+    quickSearch: 'クイック検索',
+    search: '検索',
+    answerSources: '回答ソース',
+    sourcesEmpty: '回答または検索後にソースが表示されます。',
+    imageTitle: '画像',
+    imagesEmpty: 'リクエスト後に関連画像が表示されます。',
+    indexUpdated: 'インデックス更新: {documents} 件のドキュメント、{images} 件の画像。',
+    loadingProviders: 'プロバイダーを読み込み中...',
+    notConfigured: '未設定',
+    keyOk: 'キー OK',
+    noKey: 'キーなし',
+    on: 'オン',
+    off: 'オフ',
+    user: 'あなた',
+    style: 'スタイル',
+    theme: 'テーマ',
+    styleFoundry: 'Foundry · 現在のタクティカル',
+    styleAtlas: 'Atlas · 暖かいエディトリアル',
+    styleHalo: 'Halo · スペーシャルグラス',
+    stylePulse: 'Pulse · 密度の高いプロツール',
+    styleSynth: 'Synth · AI 開発ツール',
+    styleAtelier: 'Atelier · エディトリアルグラデ',
+    themeDark: 'ダーク',
+    themeGraphite: 'グラファイト',
+    themeLight: 'ライト',
+    chooseStyleTitle: 'インターフェースを選択',
+    chooseStyleSubtitle: '選択は次回起動以降も保存されます。スタイル、テーマ、言語は後からヘッダーや設定で変更できます。',
+    chooseStyleHint: '初回起動時に保存',
+    openStyle: '開く',
+    launchFoundryDesc: '現在のプロジェクトスタイル: ダークな戦術ワークスペース、アンバーのアクセント、密度の高いパネル、落ち着いた可読性。',
+    launchAtlasDesc: 'preview の暖かいエディトリアル美学。クリームトーンと長文回答向けの柔らかいリズム。',
+    launchHaloDesc: 'スペーシャルグラス: すりガラスのパネル、奥行き、アクアアクセント、より空気感のある構成。',
+    launchPulseDesc: 'Linear/Vercel 風の高密度プロツール。細い線、厳密なグリッド、高い情報密度。',
+    launchSynthDesc: 'AI 開発ツール: 高コントラストのワークスペース、シアンアクセント、エンジニアリング寄りの質感。',
+    launchAtelierDesc: 'エディトリアルグラデーション: 発光するブランド表現、グラデーションアクセント、柔らかな面。'
+  },
+  ko: {
+    welcome: '환영합니다. 오퍼레이터, 아이템, 적, 스테이지, 스토리에 대해 물어보세요. 데이터베이스가 비어 있으면 먼저 인덱스를 다시 빌드하세요.',
+    newChat: '새 채팅',
+    emptyAnswer: '모델 응답이 비어 있습니다.',
+    error: '오류',
+    connected: '모델 연결됨',
+    needEnv: '.env에 키와 모델을 설정하세요',
+    chats: '채팅',
+    requests: '요청',
+    deleteChat: '채팅 삭제',
+    documents: '문서',
+    images: '이미지',
+    rebuilding: '인덱싱 중',
+    rebuildIndex: '인덱스 다시 빌드',
+    settings: '설정',
+    language: '언어',
+    provider: 'LLM 제공자',
+    model: '모델',
+    modelSearch: '모델 검색',
+    loadingModels: '모델 로드 중...',
+    noModels: '모델 목록을 사용할 수 없습니다. .env 또는 수동 입력 모델을 사용합니다.',
+    manualModel: '수동 모델',
+    memory: '사용자 메모리',
+    tools: '모델 도구 호출',
+    akWiki: 'Arknights Wiki 검색',
+    endfieldWiki: 'Endfield Wiki 검색',
+    brave: 'Brave 웹 검색',
+    sourcesLimit: '소스',
+    contextChars: '컨텍스트 문자',
+    historyMessages: '히스토리 메시지',
+    temperature: '온도',
+    memoryTitle: '메모리',
+    memoryEmpty: '아직 비어 있습니다.',
+    eyebrow: '로컬 인덱스 + 외부 소스 + 클라우드 또는 로컬 모델',
+    chatTitle: '게임 데이터베이스 채팅',
+    searching: '인덱스를 검색하고 모델을 호출하는 중...',
+    placeholder: '예: Amiya와 Kal\'tsit을 스토리 기준으로 비교하거나 D32 Steel 재료 찾기',
+    send: '보내기',
+    quickSearch: '빠른 검색',
+    search: '검색',
+    answerSources: '답변 소스',
+    sourcesEmpty: '답변 또는 검색 후 소스가 표시됩니다.',
+    imageTitle: '이미지',
+    imagesEmpty: '요청 후 관련 이미지가 표시됩니다.',
+    indexUpdated: '인덱스 업데이트: 문서 {documents}개, 이미지 {images}개.',
+    loadingProviders: '제공자 로드 중...',
+    notConfigured: '설정 안 됨',
+    keyOk: '키 정상',
+    noKey: '키 없음',
+    on: '켜짐',
+    off: '꺼짐',
+    user: '나',
+    style: '스타일',
+    theme: '테마',
+    styleFoundry: 'Foundry · 현재 전술형',
+    styleAtlas: 'Atlas · 따뜻한 에디토리얼',
+    styleHalo: 'Halo · 공간 글래스',
+    stylePulse: 'Pulse · 조밀한 프로 툴',
+    styleSynth: 'Synth · AI 개발 툴',
+    styleAtelier: 'Atelier · 에디토리얼 그라데이션',
+    themeDark: '다크',
+    themeGraphite: '그래파이트',
+    themeLight: '라이트',
+    chooseStyleTitle: '인터페이스 선택',
+    chooseStyleSubtitle: '선택은 다음 실행에도 저장됩니다. 이후에도 헤더나 설정에서 스타일, 테마, 언어를 바꿀 수 있습니다.',
+    chooseStyleHint: '첫 실행 때 저장',
+    openStyle: '열기',
+    launchFoundryDesc: '현재 프로젝트 스타일: 어두운 전술형 작업 공간, 앰버 포인트, 조밀한 패널, 차분한 가독성.',
+    launchAtlasDesc: 'preview의 따뜻한 에디토리얼 미학. 크림 톤과 긴 답변에 맞는 부드러운 리듬.',
+    launchHaloDesc: '공간 글래스: 반투명 패널, 깊이감, 아쿠아 포인트, 더 가벼운 구성.',
+    launchPulseDesc: 'Linear/Vercel 느낌의 조밀한 프로 툴: 얇은 선, 엄격한 그리드, 높은 정보 밀도.',
+    launchSynthDesc: 'AI 개발 툴: 고대비 워크스페이스, 시안 포인트, 엔지니어링 중심의 분위기.',
+    launchAtelierDesc: '에디토리얼 그라데이션: 빛나는 브랜드 처리, 그라데이션 포인트, 부드러운 표면.'
+  }
+};
+
+for (const lang of Object.keys(UI_I18N)) {
+  I18N[lang] = { ...(I18N.en || {}), ...(I18N[lang] || {}), ...UI_I18N[lang] };
+}
+
+function getI18n(lang) {
+  return I18N[lang] || I18N.ru || I18N.en;
+}
+
 function cls(...items) {
   return items.filter(Boolean).join(' ');
 }
 
 function createWelcome(lang) {
-  return { role: 'assistant', content: I18N[lang].welcome, welcome: true };
+  return { role: 'assistant', content: getI18n(lang).welcome, welcome: true };
 }
 
-function createChat(lang, title = I18N[lang].newChat) {
+function createChat(lang, title = getI18n(lang).newChat) {
   const now = new Date().toISOString();
   return {
     id: crypto.randomUUID(),
@@ -154,7 +466,7 @@ function createChat(lang, title = I18N[lang].newChat) {
 
 function titleFromText(text, lang) {
   const clean = text.replace(/\s+/g, ' ').trim();
-  if (!clean) return I18N[lang].newChat;
+  if (!clean) return getI18n(lang).newChat;
   return clean.length > 42 ? `${clean.slice(0, 42).trim()}...` : clean;
 }
 
@@ -170,9 +482,108 @@ async function api(path, options = {}) {
   return data;
 }
 
+function styleDescriptionKey(styleId) {
+  return `launch${styleId[0].toUpperCase()}${styleId.slice(1)}Desc`;
+}
+
+function StylePicker({ t, value, onChange, compact = false }) {
+  return (
+    <label className={compact ? 'toolbarSelect' : 'selectLabel'}>
+      <span>{t.style}</span>
+      <select value={value} onChange={(e) => onChange(e.target.value)}>
+        {UI_STYLES.map((style) => (
+          <option key={style.id} value={style.id}>
+            {t[style.key] || style.title}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function ThemePicker({ t, value, onChange, compact = false }) {
+  return (
+    <label className={compact ? 'toolbarSelect' : 'selectLabel'}>
+      <span>{t.theme}</span>
+      <select value={value} onChange={(e) => onChange(e.target.value)}>
+        {THEMES.map((themeItem) => (
+          <option key={themeItem.id} value={themeItem.id}>
+            {t[themeItem.key] || themeItem.id}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function LanguagePicker({ t, value, onChange, compact = false }) {
+  return (
+    <label className={compact ? 'toolbarSelect' : 'selectLabel'}>
+      <span>{t.language}</span>
+      <select value={value} onChange={(e) => onChange(e.target.value)}>
+        {LANGUAGES.map((language) => (
+          <option key={language.id} value={language.id}>
+            {language.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function StyleLauncher({ t, uiStyle, theme, lang, onTheme, onLang, onChoose }) {
+  return (
+    <main className="styleGate">
+      <section className="styleGateHeader">
+        <div className="brand">
+          <div className="brandMark"><Layers size={20} /></div>
+          <div>
+            <h1>{APP_NAME}</h1>
+            <p>{t.chooseStyleHint}</p>
+          </div>
+        </div>
+        <div className="preferenceBar">
+          <ThemePicker t={t} value={theme} onChange={onTheme} compact />
+          <LanguagePicker t={t} value={lang} onChange={onLang} compact />
+        </div>
+      </section>
+
+      <section className="styleGateIntro">
+        <div className="eyebrow"><Palette size={14} /> {t.style}</div>
+        <h2>{t.chooseStyleTitle}</h2>
+        <p>{t.chooseStyleSubtitle}</p>
+      </section>
+
+      <section className="styleGrid" aria-label={t.chooseStyleTitle}>
+        {UI_STYLES.map((style) => (
+          <button
+            key={style.id}
+            className={cls('styleCard', `styleCard-${style.id}`, uiStyle === style.id && 'selected')}
+            onClick={() => onChoose(style.id)}
+          >
+            <span className="stylePreview" />
+            <span className="styleCardBody">
+              <span className="styleCardTop">
+                <strong>{style.title}</strong>
+                {uiStyle === style.id && <Check size={17} />}
+              </span>
+              <small>{t[style.key] || style.meta}</small>
+              <span>{t[styleDescriptionKey(style.id)]}</span>
+            </span>
+            <span className="styleCardAction">{t.openStyle}</span>
+          </button>
+        ))}
+      </section>
+    </main>
+  );
+}
+
 function App() {
   const [lang, setLang] = useState(() => localStorage.getItem(LANG_KEY) || 'ru');
-  const t = I18N[lang];
+  const t = getI18n(lang);
+  const [uiStyle, setUiStyle] = useState(() => localStorage.getItem(UI_STYLE_KEY) || 'foundry');
+  const [theme, setTheme] = useState(() => localStorage.getItem(THEME_KEY) || 'dark');
+  const [stylePicked, setStylePicked] = useState(() => localStorage.getItem(UI_STYLE_PICKED_KEY) === '1');
   const [health, setHealth] = useState(null);
   const [chats, setChats] = useState(() => {
     try {
@@ -240,6 +651,21 @@ function App() {
   useEffect(() => {
     localStorage.setItem(LANG_KEY, lang);
   }, [lang]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.uiStyle = uiStyle;
+    root.dataset.theme = theme;
+    root.lang = lang;
+    localStorage.setItem(UI_STYLE_KEY, uiStyle);
+    localStorage.setItem(THEME_KEY, theme);
+  }, [uiStyle, theme, lang]);
+
+  function chooseUiStyle(nextStyle) {
+    setUiStyle(nextStyle);
+    setStylePicked(true);
+    localStorage.setItem(UI_STYLE_PICKED_KEY, '1');
+  }
 
   async function refresh() {
     try {
@@ -333,7 +759,8 @@ function App() {
 
     const chatId = activeChat.id;
     const nextMessages = [...activeChat.messages, { role: 'user', content: text }];
-    const nextTitle = activeChat.title === I18N.ru.newChat || activeChat.title === I18N.en.newChat
+    const newChatTitles = new Set(Object.values(I18N).map((locale) => locale.newChat));
+    const nextTitle = newChatTitles.has(activeChat.title)
       ? titleFromText(text, lang)
       : activeChat.title;
     const model = selectedModel || manualModel.trim() || selectedProvider?.model || undefined;
@@ -346,7 +773,7 @@ function App() {
     try {
       const payloadMessages = nextMessages
         .filter((m) => m.role === 'user' || m.role === 'assistant')
-        .map((m) => ({ role: m.role, content: m.welcome ? I18N[lang].welcome : m.content }));
+        .map((m) => ({ role: m.role, content: m.welcome ? getI18n(lang).welcome : m.content }));
       const result = await api('/api/chat', {
         method: 'POST',
         body: JSON.stringify({
@@ -419,6 +846,20 @@ function App() {
     }
   }
 
+  if (!stylePicked) {
+    return (
+      <StyleLauncher
+        t={t}
+        uiStyle={uiStyle}
+        theme={theme}
+        lang={lang}
+        onTheme={setTheme}
+        onLang={setLang}
+        onChoose={chooseUiStyle}
+      />
+    );
+  }
+
   return (
     <main className="app">
       <aside className="sidebar">
@@ -487,13 +928,9 @@ function App() {
 
         <section className="settings">
           <div className="sectionTitle"><Settings size={16} /> {t.settings}</div>
-          <label className="selectLabel">
-            <span>{t.language}</span>
-            <select value={lang} onChange={(e) => setLang(e.target.value)}>
-              <option value="ru">Русский</option>
-              <option value="en">English</option>
-            </select>
-          </label>
+          <StylePicker t={t} value={uiStyle} onChange={setUiStyle} />
+          <ThemePicker t={t} value={theme} onChange={setTheme} />
+          <LanguagePicker t={t} value={lang} onChange={setLang} />
           <label className="selectLabel">
             <span>{t.provider}</span>
             <select value={provider} onChange={(e) => setProvider(e.target.value)} disabled={!health?.providers?.length}>
@@ -586,7 +1023,12 @@ function App() {
             <div className="eyebrow">{t.eyebrow}</div>
             <h2>{activeChat?.title || t.chatTitle}</h2>
           </div>
-          <div className="apiBase">{provider || health?.llm_provider || API}{manualModel ? ` · ${manualModel}` : ''}</div>
+          <div className="topbarControls">
+            <StylePicker t={t} value={uiStyle} onChange={setUiStyle} compact />
+            <ThemePicker t={t} value={theme} onChange={setTheme} compact />
+            <LanguagePicker t={t} value={lang} onChange={setLang} compact />
+            <div className="apiBase">{provider || health?.llm_provider || API}{manualModel ? ` · ${manualModel}` : ''}</div>
+          </div>
         </header>
 
         {error && <div className="error">{error}</div>}
@@ -595,7 +1037,7 @@ function App() {
           <div className="messages">
             {userMessages.map((message, index) => (
               <article key={index} className={cls('message', message.role)}>
-                <div className="messageRole">{message.role === 'user' ? (lang === 'ru' ? 'Вы' : 'You') : 'Agent'}</div>
+                <div className="messageRole">{message.role === 'user' ? (t.user || 'You') : (t.agent || 'Agent')}</div>
                 <div className="messageText">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
                 </div>
@@ -603,7 +1045,7 @@ function App() {
             ))}
             {busy && (
               <article className="message assistant">
-                <div className="messageRole">Agent</div>
+                <div className="messageRole">{t.agent || 'Agent'}</div>
                 <div className="messageText muted">{t.searching}</div>
               </article>
             )}

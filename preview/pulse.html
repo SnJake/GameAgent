@@ -1,0 +1,914 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Pulse · DB GameAgent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./panels.css">
+  <style>
+    :root[data-theme="dark"] {
+      --bg: #08080b;
+      --panel: #0c0c10;
+      --panel-2: #131318;
+      --panel-3: #1b1b22;
+      --hover: rgba(255,255,255,0.025);
+      --border: rgba(255,255,255,0.06);
+      --border-strong: rgba(255,255,255,0.10);
+      --border-vivid: rgba(255,255,255,0.16);
+      --text: #ededee;
+      --text-soft: #b4b4be;
+      --text-muted: #82828c;
+      --text-dim: #5a5a64;
+      --accent: #7d8aea;
+      --accent-2: #5e6ad2;
+      --accent-soft: rgba(125,138,234,0.14);
+      --accent-strong: #9aa5f0;
+      --good: #4ad295;
+      --warn: #f5a623;
+      --danger: #f06960;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.40);
+      --shadow-md: 0 10px 28px rgba(0,0,0,0.50);
+      --ring: 0 0 0 1px var(--accent), 0 0 0 4px rgba(125,138,234,0.20);
+      --user-bg: #0e1015;
+      --user-border: rgba(125,138,234,0.18);
+      color-scheme: dark;
+    }
+    :root[data-theme="light"] {
+      --bg: #fafafa;
+      --panel: #ffffff;
+      --panel-2: #f5f5f7;
+      --panel-3: #ededf0;
+      --hover: rgba(20,20,40,0.04);
+      --border: rgba(20,20,40,0.08);
+      --border-strong: rgba(20,20,40,0.14);
+      --border-vivid: rgba(20,20,40,0.22);
+      --text: #15151a;
+      --text-soft: #3a3a44;
+      --text-muted: #6a6a76;
+      --text-dim: #9a9aa6;
+      --accent: #5e6ad2;
+      --accent-2: #4a55b8;
+      --accent-soft: rgba(94,106,210,0.08);
+      --accent-strong: #4a55b8;
+      --good: #1ea36a;
+      --warn: #b87800;
+      --danger: #d6433a;
+      --shadow-sm: 0 1px 2px rgba(20,20,40,0.04);
+      --shadow-md: 0 6px 20px rgba(20,20,40,0.08), 0 2px 4px rgba(20,20,40,0.04);
+      --ring: 0 0 0 1px var(--accent), 0 0 0 4px rgba(94,106,210,0.15);
+      --user-bg: #f1f2f8;
+      --user-border: rgba(94,106,210,0.20);
+      color-scheme: light;
+    }
+    :root[data-theme="graphite"] {
+      --bg: #1c1c20;
+      --panel: #232328;
+      --panel-2: #2c2c33;
+      --panel-3: #36363e;
+      --hover: rgba(255,255,255,0.04);
+      --border: rgba(255,255,255,0.08);
+      --border-strong: rgba(255,255,255,0.14);
+      --border-vivid: rgba(255,255,255,0.20);
+      --text: #ecedf2;
+      --text-soft: #c4c5cf;
+      --text-muted: #909199;
+      --text-dim: #6b6c75;
+      --accent: #8e9af0;
+      --accent-2: #6b78dc;
+      --accent-soft: rgba(142,154,240,0.18);
+      --accent-strong: #a4afff;
+      --good: #6ddca0;
+      --warn: #ffc857;
+      --danger: #ff8a78;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.30);
+      --shadow-md: 0 8px 24px rgba(0,0,0,0.30);
+      --ring: 0 0 0 1px var(--accent), 0 0 0 4px rgba(142,154,240,0.22);
+      --user-bg: #2a2c36;
+      --user-border: rgba(142,154,240,0.22);
+      color-scheme: dark;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: 'Inter', -apple-system, system-ui, sans-serif;
+      font-feature-settings: 'cv02','cv03','cv04','cv11','ss01';
+      background: var(--bg); color: var(--text);
+      font-size: 13.5px; line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    .mono { font-family: 'IBM Plex Mono', ui-monospace, Consolas, monospace; font-variant-numeric: tabular-nums; }
+    .num { font-variant-numeric: tabular-nums; }
+    button, input, select, textarea { font: inherit; color: inherit; }
+    *::-webkit-scrollbar { width: 8px; height: 8px; }
+    *::-webkit-scrollbar-track { background: transparent; }
+    *::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 6px; }
+
+    /* Top bar (full-width, ultra-compact) */
+    .topnav {
+      display: grid; grid-template-columns: 240px 1fr 280px;
+      align-items: center; gap: 16px;
+      height: 44px;
+      padding: 0 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+      position: relative; z-index: 10;
+    }
+    .topnav-brand {
+      display: flex; align-items: center; gap: 9px;
+      font-weight: 600; font-size: 13.5px; letter-spacing: -0.01em;
+    }
+    .topnav-brand .mark {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+      color: #fff; display: grid; place-items: center;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.18);
+    }
+    .topnav-brand .ver {
+      padding: 1px 7px; border-radius: 999px;
+      background: var(--panel-2); border: 1px solid var(--border);
+      font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+      color: var(--text-muted); font-weight: 500; margin-left: 2px;
+    }
+    .topnav-search {
+      display: flex; align-items: center; gap: 8px;
+      max-width: 480px; margin: 0 auto;
+      padding: 6px 10px 6px 32px;
+      background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px;
+      color: var(--text-muted); font-size: 12.5px;
+      position: relative; width: 100%; cursor: pointer;
+      transition: border-color 120ms ease;
+    }
+    .topnav-search:hover { border-color: var(--border-strong); }
+    .topnav-search svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+    .topnav-search .kbd { margin-left: auto; padding: 1px 5px; border-radius: 4px; background: var(--panel); border: 1px solid var(--border); font-family: 'IBM Plex Mono', monospace; font-size: 10px; }
+    .topnav-right { display: flex; align-items: center; gap: 6px; justify-content: flex-end; }
+
+    .ic-btn {
+      width: 28px; height: 28px; border-radius: 6px;
+      display: grid; place-items: center;
+      background: transparent; border: 0; cursor: pointer; color: var(--text-muted);
+      transition: background 120ms ease, color 120ms ease;
+    }
+    .ic-btn:hover { background: var(--hover); color: var(--text); }
+    .ic-btn.sm { width: 24px; height: 24px; border-radius: 5px; }
+    .ic-btn.xs { width: 20px; height: 20px; border-radius: 4px; }
+
+    .avatar-btn {
+      width: 26px; height: 26px; border-radius: 50%; cursor: pointer;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #fff; font-weight: 600; font-size: 11px; display: grid; place-items: center;
+    }
+
+    /* App body */
+    .app {
+      display: grid; grid-template-columns: 240px 1fr 320px;
+      height: calc(100vh - 44px);
+    }
+    .sidebar, .inspector { min-height: 0; overflow: hidden auto; background: var(--panel); }
+    .sidebar { border-right: 1px solid var(--border); padding: 10px 8px 16px; }
+    .inspector { border-left: 1px solid var(--border); padding: 10px 10px 16px; }
+    .workspace { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--bg); position: relative; }
+    .chat-pane { flex: 1; min-height: 0; position: relative; overflow: hidden; }
+    .chat-pane::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 100px; background: linear-gradient(to bottom, transparent, var(--bg) 85%); pointer-events: none; z-index: 1; }
+
+    /* Sidebar */
+    .new-btn {
+      width: 100%; padding: 6px 10px; border-radius: 6px;
+      background: var(--accent); color: #fff; border: 0; cursor: pointer;
+      font-weight: 500; font-size: 12.5px;
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.16);
+      transition: filter 120ms ease;
+    }
+    .new-btn:hover { filter: brightness(1.06); }
+    .new-btn .kbd {
+      margin-left: 6px; padding: 1px 5px; border-radius: 4px;
+      background: rgba(255,255,255,0.18); font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    }
+
+    .sb-nav { display: grid; gap: 1px; margin-top: 12px; }
+    .nav-item {
+      display: grid; grid-template-columns: 18px 1fr auto; gap: 9px; align-items: center;
+      padding: 5px 9px; border-radius: 6px;
+      color: var(--text-soft); cursor: pointer; font-size: 12.5px;
+      transition: background 120ms ease, color 120ms ease;
+    }
+    .nav-item:hover { background: var(--hover); color: var(--text); }
+    .nav-item.active { background: var(--accent-soft); color: var(--accent); }
+    .nav-item .kbd { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text-dim); padding: 0 4px; border: 1px solid var(--border); border-radius: 3px; }
+
+    .sb-sec-title {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 10px 6px;
+      font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; font-weight: 600;
+    }
+    .sb-sec-title .ic-btn { color: var(--text-muted); }
+
+    .chat-list { display: grid; gap: 1px; }
+    .chat-item {
+      display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 6px;
+      padding: 6px 9px; border-radius: 6px;
+      color: var(--text-soft); cursor: pointer; position: relative;
+      transition: background 120ms ease, color 120ms ease;
+    }
+    .chat-item:hover { background: var(--hover); color: var(--text); }
+    .chat-item.active { background: var(--accent-soft); color: var(--text); }
+    .chat-item.active::before {
+      content: ""; position: absolute; left: 0; top: 6px; bottom: 6px; width: 2px; border-radius: 2px;
+      background: var(--accent);
+    }
+    .chat-row1 { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 450; overflow: hidden; }
+    .chat-row1 .pin { color: var(--warn); font-size: 9.5px; }
+    .chat-title { overflow-wrap: anywhere; word-break: break-word; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; }
+    .chat-row2 { display: flex; align-items: center; gap: 6px; margin-top: 1px; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--text-dim); }
+    .chat-row2 .sep { width: 2px; height: 2px; border-radius: 50%; background: currentColor; }
+    .chat-actions { opacity: 0; transition: opacity 120ms ease; }
+    .chat-item:hover .chat-actions { opacity: 1; }
+
+    /* Bottom utility section (compact) */
+    .sb-footer { margin-top: 16px; padding: 10px; border-top: 1px solid var(--border); display: grid; gap: 8px; }
+    .footer-stat {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 9px; border-radius: 6px;
+      background: var(--panel-2); border: 1px solid var(--border);
+      font-size: 11.5px;
+    }
+    .footer-stat .ico { color: var(--text-muted); width: 14px; height: 14px; }
+    .footer-stat .num { margin-left: auto; font-family: 'IBM Plex Mono', monospace; color: var(--text); }
+    .footer-stat .delta { font-family: 'IBM Plex Mono', monospace; color: var(--good); font-size: 10px; }
+
+    /* Workspace topbar (within main column) */
+    .ws-top {
+      display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center;
+      padding: 10px 18px;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+    }
+    .ws-top-l { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .ws-bread { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text-muted); }
+    .ws-bread .crumb { color: var(--text-muted); }
+    .ws-bread .crumb.active { color: var(--text); font-weight: 500; }
+    .ws-bread .sep { color: var(--text-dim); }
+    .ws-meta { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--text-dim); }
+
+    .ws-top-r { display: flex; align-items: center; gap: 6px; }
+    .ws-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 9px 4px 7px; border-radius: 5px;
+      background: var(--panel-2); border: 1px solid var(--border);
+      font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-soft);
+    }
+    .ws-pill .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--good); box-shadow: 0 0 6px var(--good); }
+
+    /* Tabs */
+    .ws-tabs {
+      display: flex; gap: 0; padding: 0 18px;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+    }
+    .ws-tab {
+      padding: 8px 12px; border: 0; background: transparent;
+      color: var(--text-muted); cursor: pointer; font-size: 12px; font-weight: 500;
+      position: relative; transition: color 120ms ease;
+    }
+    .ws-tab:hover { color: var(--text); }
+    .ws-tab.active { color: var(--text); }
+    .ws-tab.active::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: -1px; height: 2px; background: var(--accent); border-radius: 2px; }
+    .ws-tab .badge { margin-left: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text-dim); }
+
+    /* Chat header */
+    .chat-head {
+      padding: 18px 24px 12px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+    }
+    .chat-head h2 { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.3; }
+    .chat-meta-strip {
+      display: flex; align-items: center; gap: 10px; margin-top: 8px;
+      font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--text-muted);
+    }
+    .chat-meta-strip .sep { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.5; }
+    .chat-meta-strip .k { color: var(--text-dim); }
+    .chat-meta-strip .v { color: var(--text-soft); }
+
+    /* Messages */
+    .messages { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; padding: 18px 24px 160px; }
+    .msg { max-width: 780px; margin: 0 0 18px; animation: rise 200ms ease both; }
+    .msg.user { margin-left: auto; }
+    .msg-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .avatar {
+      width: 22px; height: 22px; border-radius: 5px;
+      display: grid; place-items: center; font-size: 10.5px; font-weight: 600; color: #fff;
+      flex-shrink: 0;
+    }
+    .msg.assistant .avatar { background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
+    .msg.user .avatar { background: linear-gradient(135deg, #4ad295, #2da394); }
+    .role-name { font-size: 11.5px; color: var(--text-muted); font-weight: 500; }
+    .role-time { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--text-dim); margin-left: auto; }
+
+    .msg-body {
+      padding: 12px 14px; border-radius: 8px;
+      background: var(--panel); border: 1px solid var(--border);
+      line-height: 1.6;
+    }
+    .msg.user .msg-body { background: var(--user-bg); border-color: var(--user-border); }
+    .msg-body > :first-child { margin-top: 0; }
+    .msg-body > :last-child { margin-bottom: 0; }
+    .msg-body p, .msg-body ul { margin: 0 0 9px; }
+    .msg-body ul { padding-left: 22px; }
+    .msg-body li { margin: 3px 0; }
+    .msg-body strong { color: var(--text); font-weight: 600; }
+    .msg-body em { color: var(--text-muted); font-style: italic; }
+    .msg-body code {
+      font-family: 'IBM Plex Mono', monospace; padding: 1px 5px; border-radius: 4px;
+      background: var(--panel-2); color: var(--accent-strong); font-size: 0.9em;
+      border: 1px solid var(--border);
+    }
+
+    .msg-actions { display: flex; gap: 3px; margin-top: 6px; opacity: 0; transition: opacity 120ms ease; }
+    .msg:hover .msg-actions { opacity: 1; }
+    .micro-btn {
+      padding: 3px 8px; border-radius: 5px; font-size: 11px; cursor: pointer;
+      background: transparent; color: var(--text-muted); border: 0;
+    }
+    .micro-btn:hover { background: var(--hover); color: var(--text); }
+    .micro-btn .kbd { margin-left: 5px; padding: 0 4px; border-radius: 3px; background: var(--panel-2); border: 1px solid var(--border); font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: var(--text-dim); }
+
+    /* Steps */
+    .steps {
+      display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px;
+      padding: 5px 9px; border-radius: 5px;
+      background: var(--panel-2); border: 1px solid var(--border);
+      font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+    .step { display: inline-flex; align-items: center; gap: 5px; }
+    .step .num { width: 14px; height: 14px; border-radius: 3px; background: var(--good); color: #000; display: grid; place-items: center; font-size: 9px; font-weight: 700; }
+    .step.active .num { background: var(--accent); color: #fff; }
+    .step-sep { color: var(--text-dim); }
+    .step .lbl { color: var(--text-soft); }
+
+    /* Profile card */
+    .profile {
+      display: grid; grid-template-columns: 76px 1fr auto; gap: 14px; align-items: start;
+      padding: 12px; margin-bottom: 12px; border-radius: 8px;
+      background: var(--panel-2); border: 1px solid var(--border);
+    }
+    .profile-img {
+      aspect-ratio: 1; border-radius: 7px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      display: grid; place-items: center; color: #fff; font-weight: 600; font-size: 28px;
+      letter-spacing: -0.02em;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.18);
+    }
+    .profile-info h3 { margin: 0; font-size: 16px; font-weight: 600; letter-spacing: -0.015em; }
+    .profile-info .id { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--text-muted); margin-top: 2px; }
+    .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+    .tag {
+      padding: 1px 7px; border-radius: 4px; font-size: 10.5px; font-weight: 500;
+      background: var(--panel-3); color: var(--text-soft); border: 1px solid var(--border);
+      font-family: 'IBM Plex Mono', monospace;
+    }
+    .tag.rarity { background: rgba(245,166,35,0.12); color: var(--warn); border-color: rgba(245,166,35,0.30); }
+    .tag.sniper { background: var(--accent-soft); color: var(--accent); border-color: rgba(125,138,234,0.25); }
+    .profile-meta { display: grid; gap: 4px; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--text-muted); padding: 4px; }
+    .profile-meta .k { color: var(--text-dim); }
+    .profile-meta .v { color: var(--accent-strong); }
+
+    /* Welcome */
+    .welcome { max-width: 720px; margin: 24px auto 24px; }
+    .welcome .lbl { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; }
+    .welcome h1 { font-size: 26px; font-weight: 600; letter-spacing: -0.025em; margin: 0 0 8px; line-height: 1.2; }
+    .welcome p { color: var(--text-muted); margin: 0; max-width: 560px; line-height: 1.55; font-size: 13px; }
+    .suggestions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 16px; }
+    .suggestion {
+      padding: 10px 12px; border-radius: 7px;
+      background: var(--panel); border: 1px solid var(--border);
+      cursor: pointer; text-align: left;
+      display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center;
+      transition: border-color 120ms ease, background 120ms ease;
+    }
+    .suggestion:hover { border-color: var(--border-strong); background: var(--panel-2); }
+    .suggestion-text { font-size: 12.5px; color: var(--text); line-height: 1.4; font-weight: 450; }
+    .suggestion svg { color: var(--text-muted); }
+
+    /* Composer */
+    .composer-wrap {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      padding: 8px 24px 16px;
+      background: transparent;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .composer {
+      max-width: 840px; margin: 0 auto;
+      pointer-events: auto;
+      background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+      padding: 8px 8px 6px;
+      transition: border-color 120ms ease, box-shadow 200ms ease;
+    }
+    .composer:focus-within { border-color: var(--accent); box-shadow: var(--ring); }
+    .composer textarea {
+      width: 100%; min-height: 24px; max-height: 200px;
+      background: transparent; border: 0; outline: none; resize: none;
+      color: var(--text); padding: 4px 6px;
+      font-size: 14px; line-height: 1.55;
+    }
+    .composer textarea::placeholder { color: var(--text-muted); }
+    .composer-bar { display: flex; align-items: center; gap: 4px; padding: 2px; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 8px 3px 6px; border-radius: 5px;
+      background: var(--panel-2); border: 1px solid var(--border);
+      color: var(--text-soft); font-size: 11.5px; cursor: pointer;
+      font-family: 'IBM Plex Mono', monospace;
+      transition: border-color 120ms ease;
+    }
+    .chip:hover { border-color: var(--border-strong); color: var(--text); }
+    .chip .led { width: 5px; height: 5px; border-radius: 50%; background: var(--good); box-shadow: 0 0 4px var(--good); }
+    .grow { flex: 1; }
+    .send-btn {
+      width: 28px; height: 28px; border-radius: 6px;
+      background: var(--accent); color: #fff; border: 0; cursor: pointer;
+      display: grid; place-items: center;
+      box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.18);
+    }
+    .send-btn:hover { filter: brightness(1.06); }
+
+    /* Inspector */
+    .insp-head { display: flex; align-items: center; justify-content: space-between; padding: 4px 6px 8px; }
+    .insp-head h3 { font-size: 12px; font-weight: 600; margin: 0; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; }
+    .insp-head .actions { display: flex; gap: 2px; }
+
+    .insp-card {
+      padding: 10px; border-radius: 8px;
+      background: var(--panel-2); border: 1px solid var(--border);
+      margin-bottom: 10px;
+    }
+
+    .field { display: grid; gap: 4px; margin-bottom: 8px; }
+    .field-label { font-size: 10.5px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; text-transform: uppercase; letter-spacing: 0.06em; }
+    .input, .select {
+      width: 100%; padding: 6px 8px; border-radius: 5px;
+      background: var(--panel); border: 1px solid var(--border);
+      color: var(--text); outline: none; font-size: 12px;
+      transition: border-color 120ms ease;
+    }
+    .input:focus, .select:focus { border-color: var(--accent); box-shadow: var(--ring); }
+    .select { appearance: none; padding-right: 26px;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2382828c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+      background-repeat: no-repeat; background-position: right 8px center;
+    }
+
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 0; gap: 8px; }
+    .toggle-row label { font-size: 12px; color: var(--text-soft); }
+    .toggle-row.disabled label { color: var(--text-dim); }
+    .switch { position: relative; width: 26px; height: 14px; flex-shrink: 0; }
+    .switch input { position: absolute; opacity: 0; }
+    .switch span { position: absolute; inset: 0; background: var(--border-strong); border-radius: 999px; cursor: pointer; transition: background 160ms ease; }
+    .switch span::after { content: ""; position: absolute; top: 2px; left: 2px; width: 10px; height: 10px; border-radius: 50%; background: #fff; transition: transform 160ms ease; }
+    .switch input:checked + span { background: var(--accent); }
+    .switch input:checked + span::after { transform: translateX(12px); }
+    .switch input:disabled + span { opacity: 0.4; cursor: not-allowed; }
+
+    .slider-row { padding: 4px 0; }
+    .slider-head { display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: var(--text-soft); margin-bottom: 3px; }
+    .slider-head .val { font-family: 'IBM Plex Mono', monospace; color: var(--accent); font-weight: 500; font-size: 11px; }
+    .slider { width: 100%; appearance: none; background: transparent; height: 14px; }
+    .slider::-webkit-slider-runnable-track { height: 3px; background: var(--border-strong); border-radius: 999px; }
+    .slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 12px; height: 12px; margin-top: -4.5px; background: var(--accent); border-radius: 50%; cursor: pointer; transition: transform 100ms ease; }
+    .slider:hover::-webkit-slider-thumb { transform: scale(1.15); }
+
+    /* Sources */
+    .filter-bar { display: flex; gap: 1px; margin-bottom: 8px; padding: 2px; background: var(--panel-3); border-radius: 6px; }
+    .filter-bar button { flex: 1 1 0; min-width: 0; padding: 4px 6px; border: 0; background: transparent; color: var(--text-muted); font-size: 11px; cursor: pointer; border-radius: 4px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .filter-bar button:hover { color: var(--text); }
+    .filter-bar button.active { background: var(--panel); color: var(--text); }
+
+    .source-list { display: grid; gap: 4px; }
+    .source-row {
+      display: grid; grid-template-columns: 1fr auto; gap: 8px;
+      padding: 8px 9px; border-radius: 6px;
+      background: var(--panel-2); border: 1px solid transparent;
+      cursor: pointer; transition: border-color 120ms ease, background 120ms ease;
+    }
+    .source-row:hover { border-color: var(--border-strong); background: var(--panel-3); }
+    .source-meta { display: flex; align-items: center; gap: 5px; margin-bottom: 3px; }
+    .cat-chip {
+      padding: 1px 6px; border-radius: 3px; font-size: 9.5px; font-weight: 700;
+      letter-spacing: 0.04em; font-family: 'IBM Plex Mono', monospace;
+    }
+    .cat-chip.lore { background: var(--accent-soft); color: var(--accent); }
+    .cat-chip.gameplay { background: rgba(74,210,149,0.12); color: var(--good); }
+    .source-source { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: var(--text-dim); }
+    .source-title { font-size: 12px; font-weight: 550; }
+    .source-snippet { color: var(--text-muted); font-size: 11.5px; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 2px; }
+    .source-score { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text-muted); align-self: start; padding-top: 2px; }
+
+    /* Image grid */
+    .img-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
+    .img-card { aspect-ratio: 1; position: relative; border-radius: 5px; overflow: hidden; background: var(--panel-2); border: 1px solid var(--border); cursor: pointer; transition: border-color 120ms ease; }
+    .img-card:hover { border-color: var(--accent); }
+    .img-card img { width: 100%; height: 100%; object-fit: cover; }
+    .img-card figcaption {
+      position: absolute; bottom: 2px; left: 2px; right: 2px;
+      padding: 1px 5px; border-radius: 3px;
+      background: rgba(0,0,0,0.7); color: #fff;
+      font-family: 'IBM Plex Mono', monospace; font-size: 9px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+
+    /* Memory */
+    .mem-item { padding: 8px 10px; border-radius: 6px; background: var(--panel-2); border: 1px solid var(--border); margin-bottom: 4px; }
+    .mem-key { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
+    .mem-val { font-size: 12px; margin-top: 2px; color: var(--text); }
+
+    /* (floating-bar removed — switcher moved into topnav) */
+
+    @keyframes rise { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    .panel-splitter::before { background: var(--text-muted); }
+    .theme-toggle-inline { display: flex; gap: 0; background: var(--panel-2); border-radius: 5px; padding: 1px; border: 1px solid var(--border); }
+    .theme-toggle-inline button { padding: 3px 7px; border: 0; border-radius: 4px; background: transparent; color: var(--text-muted); cursor: pointer; font-size: 11px; font-family: 'IBM Plex Mono', monospace; }
+    .theme-toggle-inline button.active { background: var(--panel); color: var(--text); }
+    .lang-inline {
+      padding: 4px 22px 4px 9px; border-radius: 5px;
+      background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+      font-size: 11px; outline: none; cursor: pointer; appearance: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2382828c' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+      background-repeat: no-repeat; background-position: right 6px center;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+    .collapse-toggle { color: var(--text-muted); flex-shrink: 0; }
+    .collapse-toggle:hover { color: var(--text); background: var(--hover); }
+    .collapse-toggle[aria-pressed="true"] { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <!-- Top nav -->
+  <nav class="topnav">
+    <div class="topnav-brand">
+      <div class="mark">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      <span data-i18n="brand">DB GameAgent</span>
+      <span class="ver">v2.6</span>
+    </div>
+    <div class="topnav-search">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <span data-i18n="commandPalette">Command palette</span>
+      <span class="kbd">⌘K</span>
+    </div>
+    <div class="topnav-right">
+      <button class="collapse-toggle" data-collapse-panel="sidebar" title="Toggle sidebar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg></button>
+      <button class="collapse-toggle" data-collapse-panel="inspector" title="Toggle inspector"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></svg></button>
+      <span style="width: 1px; height: 18px; background: var(--border); margin: 0 4px;"></span>
+      <div class="theme-toggle-inline" id="theme-toggle">
+        <button data-theme-set="dark" data-i18n="themeDark">Dark</button>
+        <button data-theme-set="graphite" data-i18n="themeGraphite">Graphite</button>
+        <button data-theme-set="light" data-i18n="themeLight">Light</button>
+      </div>
+      <select id="style-select" class="lang-inline" title="Style" aria-label="Style">
+        <option value="atlas.html">Atlas</option>
+        <option value="halo.html">Halo</option>
+        <option value="pulse.html">Pulse</option>
+        <option value="synth.html">Synth</option>
+        <option value="atelier.html">Atelier</option>
+      </select>
+      <select id="lang-select" class="lang-inline">
+        <option value="ru">RU</option><option value="en">EN</option><option value="zh">ZH</option><option value="ja">JA</option><option value="ko">KO</option>
+      </select>
+      <span style="width: 1px; height: 18px; background: var(--border); margin: 0 4px;"></span>
+      <div class="avatar-btn">S</div>
+    </div>
+  </nav>
+
+  <main class="app">
+    <aside class="sidebar" data-panel="sidebar" data-initial="240" data-min="200" data-max="400">
+      <button class="new-btn">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+        <span data-i18n="newChat">New chat</span>
+        <span class="kbd">N</span>
+      </button>
+
+      <div class="sb-nav">
+        <div class="nav-item active">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span data-i18n="chats">Chats</span>
+          <span class="kbd">C</span>
+        </div>
+        <div class="nav-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+          <span data-i18n="lib">Library</span>
+          <span class="kbd">L</span>
+        </div>
+        <div class="nav-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span data-i18n="recents">Recents</span>
+          <span class="kbd">R</span>
+        </div>
+        <div class="nav-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          <span data-i18n="memoryTitle">Memory</span>
+          <span class="kbd">M</span>
+        </div>
+      </div>
+
+      <div class="sb-sec-title">
+        <span data-i18n="pinned">Pinned</span>
+        <button class="ic-btn xs"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg></button>
+      </div>
+      <div class="chat-list" id="chat-list-pinned"></div>
+
+      <div class="sb-sec-title">
+        <span data-i18n="recents">Recents</span>
+      </div>
+      <div class="chat-list" id="chat-list-recents"></div>
+
+      <div class="sb-footer">
+        <div class="footer-stat">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+          <span data-i18n="documents">documents</span>
+          <span class="num">51 210</span>
+          <span class="delta">+248</span>
+        </div>
+        <div class="footer-stat">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          <span data-i18n="images">images</span>
+          <span class="num">28 122</span>
+          <span class="delta">+112</span>
+        </div>
+      </div>
+    </aside>
+
+    <section class="workspace" data-panel="workspace" data-flex="1">
+      <div class="ws-top">
+        <div class="ws-top-l">
+          <div class="ws-bread">
+            <span class="crumb" data-i18n="chats">Chats</span>
+            <span class="sep">/</span>
+            <span class="crumb active" id="bread-title">Operator Wišʼadel · profile</span>
+          </div>
+          <span class="ws-meta">· tokens this session <strong style="color:var(--text-soft);">14 732</strong></span>
+        </div>
+        <div class="ws-top-r">
+          <span class="ws-pill"><span class="dot"></span><span>bothub · grok-4.3</span></span>
+          <button class="ic-btn" title="Share"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></button>
+          <button class="ic-btn" title="More"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+        </div>
+      </div>
+
+      <div class="ws-tabs">
+        <button class="ws-tab active" data-i18n="tabIntel">Intel</button>
+        <button class="ws-tab" data-i18n="tabCompare">Compare<span class="badge">2</span></button>
+        <button class="ws-tab" data-i18n="tabBuilds">Builds</button>
+        <button class="ws-tab" data-i18n="memoryTitle">Memory</button>
+      </div>
+
+      <div class="chat-head">
+        <h2 data-i18n="chatTitle">Tell me about Operator Wišʼadel…</h2>
+        <div class="chat-meta-strip">
+          <span><span class="k">id</span> <span class="v">char_1035_wisdel</span></span>
+          <span class="sep"></span>
+          <span><span class="k">tags</span> <span class="v">SNIPER · RANGED · DPS</span></span>
+          <span class="sep"></span>
+          <span><span class="k">rarity</span> <span class="v">TIER 6</span></span>
+        </div>
+      </div>
+
+      <div class="chat-pane">
+      <div class="messages" id="messages"></div>
+
+      <div class="composer-wrap">
+        <div class="composer">
+          <textarea data-i18n-attr="placeholder:placeholder"></textarea>
+          <div class="composer-bar">
+            <button class="chip"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg><span data-i18n="attach">Attach</span></button>
+            <button class="chip"><span class="led"></span><span>grok-4.3</span><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+            <button class="chip"><span>T=1.00</span></button>
+            <span class="grow"></span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text-dim);">⌘ + ↵</span>
+            <button class="send-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 14-7-7 14-2-5-5-2z"/></svg></button>
+          </div>
+        </div>
+      </div>
+      </div>
+    </section>
+
+    <aside class="inspector" data-panel="inspector" data-initial="320" data-min="260" data-max="500">
+      <div class="insp-head">
+        <h3 data-i18n="quickSearch">Quick search</h3>
+        <div class="actions">
+          <button class="ic-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+        </div>
+      </div>
+
+      <div class="insp-card">
+        <div class="field">
+          <input class="input" data-i18n-attr="placeholder:search" placeholder="Search…" />
+        </div>
+        <div class="filter-bar">
+          <button class="active" data-i18n="filterAll">All</button>
+          <button data-i18n="filterLore">Lore</button>
+          <button data-i18n="filterGameplay">Game</button>
+          <button data-i18n="filterImage">Img</button>
+        </div>
+      </div>
+
+      <div class="insp-head">
+        <h3><span data-i18n="answerSources">Answer sources</span> <span class="mono" style="color: var(--text-dim);">20</span></h3>
+      </div>
+      <div class="source-list" id="sources"></div>
+
+      <div class="insp-head" style="margin-top: 10px;">
+        <h3><span data-i18n="imageTitle">Images</span> <span class="mono" style="color: var(--text-dim);">6</span></h3>
+      </div>
+      <div class="img-grid" id="images"></div>
+
+      <div class="insp-head" style="margin-top: 10px;">
+        <h3 data-i18n="preferences">Preferences</h3>
+      </div>
+      <div class="insp-card">
+        <div class="field"><div class="field-label" data-i18n="provider">Provider</div><select class="select" id="provider-select"></select></div>
+        <div class="field"><div class="field-label" data-i18n="model">Model</div><select class="select" id="model-select"></select></div>
+        <div class="toggle-row"><label data-i18n="memory">User memory</label><span class="switch"><input type="checkbox" checked /><span></span></span></div>
+        <div class="toggle-row"><label data-i18n="tools">Tool calls</label><span class="switch"><input type="checkbox" /><span></span></span></div>
+        <div class="toggle-row"><label data-i18n="akWiki">AK Wiki</label><span class="switch"><input type="checkbox" checked /><span></span></span></div>
+        <div class="toggle-row disabled"><label data-i18n="brave">Brave web</label><span class="switch"><input type="checkbox" disabled /><span></span></span></div>
+
+        <div class="slider-row">
+          <div class="slider-head"><span data-i18n="temperature">Temperature</span><span class="val" data-bind="temp">1.00</span></div>
+          <input type="range" class="slider" min="0" max="2" step="0.05" value="1.00" data-target="temp" />
+        </div>
+        <div class="slider-row">
+          <div class="slider-head"><span data-i18n="sourcesLimit">Sources</span><span class="val" data-bind="sources">20</span></div>
+          <input type="range" class="slider" min="1" max="30" value="20" data-target="sources" />
+        </div>
+        <div class="slider-row">
+          <div class="slider-head"><span data-i18n="contextChars">Context</span><span class="val" data-bind="ctx">35 000</span></div>
+          <input type="range" class="slider" min="1000" max="60000" step="1000" value="35000" data-target="ctx" data-fmt="thousands" />
+        </div>
+      </div>
+
+      <div class="insp-head"><h3 data-i18n="memoryTitle">Memory</h3></div>
+      <div id="memory-list"></div>
+    </aside>
+  </main>
+
+  <script src="./shared.js"></script>
+  <script src="./panels.js"></script>
+  <script>
+    PREVIEW_PANELS.setup({ root: '.app', key: 'pulse' });
+    const P = window.PREVIEW;
+    P.bindStylePicker('style-select');
+    const initialTheme = P.getStored('preview-theme', 'dark');
+    const initialLang = P.getStored('preview-lang', 'en');
+    P.applyTheme(document.documentElement, initialTheme);
+    const syncLang = (l) => document.querySelectorAll('#lang-select').forEach((s) => s.value = l);
+    const syncTheme = (t) => document.querySelectorAll('[data-theme-set]').forEach((b) => b.classList.toggle('active', b.dataset.themeSet === t));
+    syncTheme(initialTheme);
+
+    function setLang(l, persist = true) { P.applyLang(document.documentElement, l); if (persist) P.setStored('preview-lang', l); syncLang(l); renderAll(); }
+    function setTheme(t, persist = true) { P.applyTheme(document.documentElement, t); if (persist) P.setStored('preview-theme', t); syncTheme(t); }
+    document.getElementById('lang-select').addEventListener('change', (e) => setLang(e.target.value));
+    document.querySelectorAll('[data-theme-set]').forEach((b) => b.addEventListener('click', () => setTheme(b.dataset.themeSet)));
+    document.querySelectorAll('.slider').forEach((s) => s.addEventListener('input', () => {
+      const t = s.dataset.target; const fmt = s.dataset.fmt;
+      const el = document.querySelector(`[data-bind="${t}"]`); if (!el) return;
+      const v = Number(s.value);
+      el.textContent = fmt === 'thousands' ? v.toLocaleString('en-US').replace(/,/g, ' ') : (t === 'temp' ? v.toFixed(2) : v);
+    }));
+
+    function renderChats() {
+      const dict = P.I18N[document.documentElement.dataset.lang || 'en'];
+      const pinned = document.getElementById('chat-list-pinned');
+      const recents = document.getElementById('chat-list-recents');
+      pinned.innerHTML = ''; recents.innerHTML = '';
+      P.MOCK.chats.forEach((c) => {
+        const title = c.titleKey ? dict[c.titleKey] : c.title;
+        const el = document.createElement('div'); el.className = 'chat-item' + (c.active ? ' active' : '');
+        el.innerHTML = `
+          <div style="min-width:0;">
+            <div class="chat-row1">${c.pinned ? '<span class="pin">★</span>' : ''}<span class="chat-title">${title}</span></div>
+            <div class="chat-row2"><span>${c.count} ${dict.requests}</span><span class="sep"></span><span>${dict[c.when] || c.whenLit}</span></div>
+          </div>
+          <div class="chat-actions"><button class="ic-btn xs"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button></div>`;
+        (c.pinned ? pinned : recents).appendChild(el);
+      });
+    }
+    function renderProviders() {
+      const sel = document.getElementById('provider-select'); sel.innerHTML = '';
+      P.MOCK.providers.forEach((p) => { const o = document.createElement('option'); o.value = p.id; o.textContent = `${p.label} · ${p.model}`; if (!p.configured) o.disabled = true; sel.appendChild(o); });
+      const ms = document.getElementById('model-select'); ms.innerHTML = '';
+      P.MOCK.models.forEach((m) => { const o = document.createElement('option'); o.value = m; o.textContent = m; ms.appendChild(o); });
+      ms.value = 'grok-4.3';
+    }
+    function renderMessages() {
+      const dict = P.I18N[document.documentElement.dataset.lang || 'en'];
+      const el = document.getElementById('messages'); el.innerHTML = '';
+      P.MOCK.messages.forEach((m, i) => {
+        if (m.welcome) {
+          el.insertAdjacentHTML('beforeend', `
+            <section class="welcome">
+              <div class="lbl">// ${dict.welcomeTitle}</div>
+              <h1>${dict.welcomeSub}</h1>
+              <div class="suggestions">
+                ${P.MOCK.suggestions.map((k) => `
+                  <button class="suggestion">
+                    <span class="suggestion-text">${dict[k]}</span>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                  </button>`).join('')}
+              </div>
+            </section>`);
+          return;
+        }
+        const wrap = document.createElement('article'); wrap.className = 'msg ' + m.role;
+        const role = m.role === 'user' ? dict.user : dict.agent;
+        const avatarText = m.role === 'user' ? 'S' : 'A';
+        const ts = ['13:42:18', '13:42:21'][Math.max(0, i - 1)] || '';
+        let body = '';
+        if (m.contentKey) body = `<p>${dict[m.contentKey]}</p>`;
+        else if (m.markdown) {
+          let steps = '';
+          if (m.steps) {
+            steps = `<div class="steps">
+              ${m.steps.map((k, idx) => `<div class="step"><span class="num">${idx+1}</span><span class="lbl">${dict[k]}</span></div>${idx < m.steps.length-1 ? '<span class="step-sep">›</span>' : ''}`).join('')}
+            </div>`;
+          }
+          body = steps + renderMd(m.content, dict);
+        } else body = `<p>${m.content}</p>`;
+        const actions = m.role === 'assistant' && m.markdown
+          ? `<div class="msg-actions"><button class="micro-btn">${dict.copyAnswer}<span class="kbd">C</span></button><button class="micro-btn">${dict.regenerate}<span class="kbd">R</span></button><button class="micro-btn">${dict.shareChat}</button></div>`
+          : '';
+        wrap.innerHTML = `
+          <div class="msg-head"><div class="avatar">${avatarText}</div><span class="role-name">${role}</span><span class="role-time">${ts}</span></div>
+          <div class="msg-body">${body}</div>${actions}`;
+        el.appendChild(wrap);
+      });
+    }
+    function renderMd(src, dict) {
+      if (src.startsWith('**Operator Wišʼadel**')) {
+        return `
+          <div class="profile">
+            <div class="profile-img">W</div>
+            <div class="profile-info">
+              <h3>Wišʼadel</h3>
+              <div class="id">char_1035_wisdel</div>
+              <div class="tags">
+                <span class="tag rarity">${dict.tagRarity}</span>
+                <span class="tag sniper">${dict.tagSniper}</span>
+                <span class="tag">${dict.tagRanged}</span>
+                <span class="tag">${dict.tagDps}</span>
+              </div>
+            </div>
+            <div class="profile-meta">
+              <div><span class="k">ATK</span> <span class="v">→ 777</span></div>
+              <div><span class="k">DEF</span> <span class="v">→ 650</span></div>
+              <div><span class="k">RES</span> <span class="v">→ 50%</span></div>
+            </div>
+          </div>` + P.md(src.split('\n').slice(4).join('\n'));
+      }
+      return P.md(src);
+    }
+    function renderSources() {
+      const el = document.getElementById('sources'); el.innerHTML = '';
+      P.MOCK.sources.forEach((s) => {
+        const c = s.category.toLowerCase() === 'lore' ? 'lore' : 'gameplay';
+        const row = document.createElement('div'); row.className = 'source-row';
+        row.innerHTML = `
+          <div>
+            <div class="source-meta">
+              <span class="cat-chip ${c}">${s.category}</span>
+              <span class="source-source">${s.source}</span>
+            </div>
+            <div class="source-title">${s.title}</div>
+            <div class="source-snippet">${s.snippet}</div>
+          </div>
+          <div class="source-score">${s.score.toFixed(2)}</div>`;
+        el.appendChild(row);
+      });
+      const imgs = document.getElementById('images'); imgs.innerHTML = '';
+      P.MOCK.images.forEach((i) => {
+        const fig = document.createElement('figure'); fig.className = 'img-card';
+        fig.innerHTML = `<img src="${i.url}" alt="${i.name}" /><figcaption>${i.name}</figcaption>`;
+        imgs.appendChild(fig);
+      });
+    }
+    function renderMemory() {
+      const dict = P.I18N[document.documentElement.dataset.lang || 'en'];
+      const el = document.getElementById('memory-list'); el.innerHTML = '';
+      if (!P.MOCK.memoryEntries.length) { el.innerHTML = `<div style="padding: 6px; color: var(--text-muted); font-size: 12px;">${dict.memoryEmpty}</div>`; return; }
+      P.MOCK.memoryEntries.forEach((m) => {
+        const it = document.createElement('div'); it.className = 'mem-item';
+        it.innerHTML = `<div class="mem-key">${m.key}</div><div class="mem-val">${m.value}</div>`;
+        el.appendChild(it);
+      });
+    }
+    function renderAll() { renderChats(); renderMessages(); renderSources(); renderMemory(); renderProviders(); }
+    setLang(initialLang, false);
+  </script>
+</body>
+</html>
