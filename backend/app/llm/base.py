@@ -30,7 +30,17 @@ class LLMProvider(Protocol):
     def configured(self) -> bool:
         ...
 
-    async def chat(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+    async def chat(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]] | None = None,
+        *,
+        model: str | None = None,
+        temperature: float | None = None,
+    ) -> dict[str, Any]:
+        ...
+
+    async def list_models(self) -> list[str]:
         ...
 
 

@@ -23,12 +23,17 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     messages: list[ChatMessage] = Field(default_factory=list)
     provider: str | None = None
+    model: str | None = None
+    temperature: float | None = Field(default=None, ge=0, le=2)
     use_memory: bool = True
     use_tool_calls: bool | None = None
     use_wiki_search: bool = True
     use_endfield_wiki_search: bool = False
     use_web_search: bool = False
     top_k: int = Field(default=8, ge=1, le=20)
+    retrieval_limit: int | None = Field(default=None, ge=1, le=30)
+    max_context_chars: int | None = Field(default=None, ge=1000, le=60000)
+    max_history_messages: int | None = Field(default=None, ge=2, le=60)
 
 
 class ChatResponse(BaseModel):
@@ -168,7 +173,8 @@ def _prepare_messages(request: ChatRequest, context: str, external_context: str 
             "External web/wiki context. Treat it as less authoritative than local game data unless the question asks for web/wiki info. Cite URLs when using it:\n"
             + external_context
         )
-    history = request.messages[-settings.max_history_messages :]
+    history_limit = request.max_history_messages or settings.max_history_messages
+    history = request.messages[-history_limit:]
     return [{"role": "system", "content": "\n\n".join(system_parts)}] + [
         {"role": message.role, "content": message.content} for message in history if message.role != "system"
     ]
@@ -215,7 +221,8 @@ async def answer(request: ChatRequest) -> ChatResponse:
     if not provider.configured:
         raise RuntimeError(f"{provider.label} is not configured. Fill .env API key and model for this provider.")
     query = _latest_user_text(request.messages)
-    context, sources = build_context(query, limit=request.top_k)
+    retrieval_limit = request.retrieval_limit or request.top_k
+    context, sources = build_context(query, limit=retrieval_limit, max_chars=request.max_context_chars)
     external_sources = await search_external(
         query,
         use_wiki=request.use_wiki_search,
@@ -228,17 +235,17 @@ async def answer(request: ChatRequest) -> ChatResponse:
     use_tools = settings.enable_model_tools if request.use_tool_calls is None else request.use_tool_calls
     model_tools = TOOLS if use_tools and provider.supports_tools else None
     try:
-        data = await provider.chat(messages, tools=model_tools)
+        data = await provider.chat(messages, tools=model_tools, model=request.model, temperature=request.temperature)
     except httpx.HTTPStatusError:
         if not model_tools:
             raise
-        data = await provider.chat(messages, tools=None)
+        data = await provider.chat(messages, tools=None, model=request.model, temperature=request.temperature)
         return ChatResponse(
             answer=_extract_text(data),
             sources=sources + external_sources,
             images=images,
             used_tool_calls=False,
-            model=provider.model,
+            model=request.model or provider.model,
             provider=provider.id,
         )
     choice = (data.get("choices") or [{}])[0]
@@ -256,13 +263,13 @@ async def answer(request: ChatRequest) -> ChatResponse:
                     "content": await _execute_tool(function.get("name", ""), function.get("arguments", "{}")),
                 }
             )
-        final_data = await provider.chat(messages, tools=None)
+        final_data = await provider.chat(messages, tools=None, model=request.model, temperature=request.temperature)
         return ChatResponse(
             answer=_extract_text(final_data),
             sources=sources + external_sources,
             images=images,
             used_tool_calls=True,
-            model=provider.model,
+            model=request.model or provider.model,
             provider=provider.id,
         )
     return ChatResponse(
@@ -270,6 +277,6 @@ async def answer(request: ChatRequest) -> ChatResponse:
         sources=sources + external_sources,
         images=images,
         used_tool_calls=False,
-        model=provider.model,
+        model=request.model or provider.model,
         provider=provider.id,
     )

@@ -41,6 +41,14 @@ def _providers() -> dict[str, object]:
             base_url=settings.openai_base_url,
         ),
         "gemini": GeminiProvider(api_key=settings.gemini_api_key, model=settings.gemini_model),
+        "local": OpenAICompatibleProvider(
+            provider_id="local",
+            label="Local OpenAI-compatible",
+            api_key=settings.local_api_key,
+            model=settings.local_model,
+            base_url=settings.local_base_url,
+            require_api_key=False,
+        ),
     }
 
 

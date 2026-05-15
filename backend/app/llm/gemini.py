@@ -37,17 +37,25 @@ class GeminiProvider:
             )
         return "\n\n".join(system_parts), contents
 
-    async def chat(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+    async def chat(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]] | None = None,
+        *,
+        model: str | None = None,
+        temperature: float | None = None,
+    ) -> dict[str, Any]:
         if not self.configured:
             raise RuntimeError("Gemini API key or model is empty. Fill .env before chatting with Gemini.")
+        selected_model = model or self.model
         system_instruction, contents = self._to_contents(messages)
         payload: dict[str, Any] = {
             "contents": contents,
-            "generationConfig": {"temperature": settings.llm_temperature},
+            "generationConfig": {"temperature": settings.llm_temperature if temperature is None else temperature},
         }
         if system_instruction:
             payload["systemInstruction"] = {"parts": [{"text": system_instruction}]}
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{selected_model}:generateContent"
         async with httpx.AsyncClient(timeout=settings.llm_timeout_seconds) as client:
             response = await client.post(url, params={"key": self.api_key}, json=payload)
             response.raise_for_status()
@@ -58,3 +66,21 @@ class GeminiProvider:
                 if "text" in part:
                     text_parts.append(part["text"])
         return {"choices": [{"message": {"content": "\n".join(text_parts)}}], "raw": data}
+
+    async def list_models(self) -> list[str]:
+        if not self.api_key:
+            return []
+        async with httpx.AsyncClient(timeout=settings.llm_timeout_seconds) as client:
+            response = await client.get(
+                "https://generativelanguage.googleapis.com/v1beta/models",
+                params={"key": self.api_key},
+            )
+            response.raise_for_status()
+            data = response.json()
+        result: list[str] = []
+        for item in data.get("models", []):
+            name = str(item.get("name", ""))
+            if "generateContent" not in item.get("supportedGenerationMethods", []):
+                continue
+            result.append(name.removeprefix("models/"))
+        return sorted(set(result), key=str.lower)

@@ -288,8 +288,29 @@ h2 {
   outline: none;
 }
 
+.selectLabel input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--line);
+  background: #151719;
+  color: var(--text);
+  border-radius: 8px;
+  padding: 9px 10px;
+  outline: none;
+}
+
 .selectLabel select:focus {
   border-color: var(--accent);
+}
+
+.selectLabel input:focus {
+  border-color: var(--accent);
+}
+
+.fieldHint {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .toggle input:disabled + span {

@@ -12,7 +12,7 @@ from .agent import ChatRequest, ChatResponse, answer
 from .config import ROOT_DIR, settings
 from .db import init_db
 from .indexer import git_pull_allowed_repo, rebuild_index
-from .llm import list_providers
+from .llm import get_provider, list_providers
 from .search import get_stats, image_path_by_id, load_memory, save_memory, search_documents, search_images
 from .web_search import search_brave, search_endfield_wiki, search_wikis
 
@@ -43,6 +43,10 @@ def health() -> dict[str, object]:
         "base_url": settings.bothub_base_url,
         "llm_provider": active_provider.id,
         "llm_model": active_provider.model,
+        "llm_temperature": settings.llm_temperature,
+        "max_context_results": settings.max_context_results,
+        "max_context_chars": settings.max_context_chars,
+        "max_history_messages": settings.max_history_messages,
         "providers": [provider.__dict__ for provider in providers],
         "wiki_search_enabled": settings.wiki_search_enabled,
         "endfield_wiki_search_enabled": settings.endfield_wiki_search_enabled,
@@ -58,6 +62,19 @@ def providers() -> dict[str, object]:
         "active": settings.llm_provider,
         "providers": [provider.__dict__ for provider in list_providers()],
     }
+
+
+@app.get("/api/providers/{provider_id}/models")
+async def provider_models(provider_id: str) -> dict[str, object]:
+    try:
+        provider = get_provider(provider_id)
+        return {
+            "provider": provider.id,
+            "default_model": provider.model,
+            "models": await provider.list_models(),
+        }
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.post("/api/chat", response_model=ChatResponse)

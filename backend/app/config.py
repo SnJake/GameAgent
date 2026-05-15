@@ -41,6 +41,10 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     gemini_model: str = ""
 
+    local_api_key: str = ""
+    local_model: str = ""
+    local_base_url: str = "http://127.0.0.1:8080/v1"
+
     host: str = "127.0.0.1"
     port: int = 8017
     cors_origins: str = "http://127.0.0.1:5173,http://localhost:5173"
