@@ -172,9 +172,9 @@ def build_context(query: str, *, limit: int | None = None, max_chars: int | None
     budget = max_chars or settings.max_context_chars
     for index, doc in enumerate(docs, start=1):
         per_doc_limit = {
-            "operator": 2800,
+            "operator": 4200,
             "skill": 4200,
-            "talent": 2800,
+            "talent": 5200,
             "enemy": 1800,
             "item": 1500,
             "stage": 1500,

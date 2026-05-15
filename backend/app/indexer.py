@@ -257,7 +257,7 @@ def _index_characters(conn: sqlite3.Connection, source: SourceRoot) -> int:
                 f"Description: {char.get('description')}",
                 f"Usage: {char.get('itemUsage')}",
                 f"Profile: {char.get('itemDesc')}",
-                "Talents: " + " | ".join(talents[:8]) if talents else "",
+                "Talents: " + " | ".join(talents) if talents else "",
                 "Skills: " + " | ".join(skills[:4]) if skills else "",
                 "Stats: " + " | ".join(costs[-2:]) if costs else "",
             ]

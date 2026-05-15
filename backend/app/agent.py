@@ -187,13 +187,21 @@ async def _execute_tool(name: str, arguments: str) -> str:
         args = {}
     if name == "search_arknights":
         result = search_documents(args.get("query", ""), args.get("category"), args.get("limit", 8))
+
+        def snippet_limit(item: dict[str, Any]) -> int:
+            return {
+                "operator": 3600,
+                "skill": 4200,
+                "talent": 5200,
+            }.get(str(item.get("category")), 1200)
+
         compact = [
             {
                 "title": item["title"],
                 "category": item["category"],
                 "source": item["source"],
                 "path": item["path"],
-                "snippet": truncate(item["body"], 900),
+                "snippet": truncate(item["body"], snippet_limit(item)),
             }
             for item in result
         ]
