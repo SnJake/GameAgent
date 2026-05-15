@@ -24,7 +24,7 @@ powershell -NoProfile -Command "if (Get-NetTCPConnection -LocalAddress 127.0.0.1
 if %errorlevel%==0 (
   echo API is already running on http://127.0.0.1:8017
 ) else (
-  start "Arknights Agent API" cmd /k "call .venv\Scripts\activate.bat && uvicorn backend.app.main:app --host 127.0.0.1 --port 8017"
+  start "Arknights Agent API" cmd /k "call .venv\Scripts\activate.bat && python -m backend.app.run_server"
 )
 
 powershell -NoProfile -Command "if (Get-NetTCPConnection -LocalAddress 127.0.0.1 -LocalPort 5173 -State Listen -ErrorAction SilentlyContinue) { exit 0 } else { exit 1 }"
