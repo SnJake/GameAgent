@@ -36,6 +36,13 @@ class Settings(BaseSettings):
     max_history_messages: int = Field(default=8, ge=2, le=40)
     enable_model_tools: bool = False
 
+    wiki_search_enabled: bool = True
+    wiki_search_max_results: int = Field(default=4, ge=1, le=10)
+    web_search_enabled: bool = False
+    web_search_provider: str = "brave"
+    brave_search_api_key: str = ""
+    web_search_max_results: int = Field(default=5, ge=1, le=10)
+
     @property
     def cors_origin_list(self) -> List[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]

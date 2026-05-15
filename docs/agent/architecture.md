@@ -12,10 +12,12 @@
 
 1. User sends a chat message from the UI.
 2. Backend searches the SQLite index with FTS5.
-3. Backend builds a compact context block.
-4. Backend calls BotHub via OpenAI-compatible Chat Completions.
-5. Optional tool calls can run additional searches or save memory.
-6. UI renders answer, sources, and matching images.
+3. Backend optionally searches `prts.wiki` and `arknights.wiki.gg` through MediaWiki API.
+4. Backend optionally searches Brave Search API when web search is enabled.
+5. Backend builds compact local and external context blocks.
+6. Backend calls BotHub via OpenAI-compatible Chat Completions.
+7. Optional tool calls can run additional searches or save memory.
+8. UI renders answer, sources, and matching images.
 
 ## Future Providers
 

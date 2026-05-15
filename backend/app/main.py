@@ -13,6 +13,7 @@ from .config import ROOT_DIR, settings
 from .db import init_db
 from .indexer import git_pull_allowed_repo, rebuild_index
 from .search import get_stats, image_path_by_id, load_memory, save_memory, search_documents, search_images
+from .web_search import search_brave, search_wikis
 
 
 app = FastAPI(title="Arknights DB Agent", version="0.1.0")
@@ -37,6 +38,9 @@ def health() -> dict[str, object]:
         "ok": True,
         "model_configured": bool(settings.bothub_model and settings.bothub_api_key),
         "base_url": settings.bothub_base_url,
+        "wiki_search_enabled": settings.wiki_search_enabled,
+        "web_search_enabled": settings.web_search_enabled,
+        "brave_configured": bool(settings.brave_search_api_key),
         **stats,
     }
 
@@ -57,6 +61,22 @@ def search(q: str = Query(..., min_length=1), category: str | None = None, limit
 @app.get("/api/images")
 def images(q: str = Query(..., min_length=1), limit: int = 12) -> dict[str, object]:
     return {"results": search_images(q, limit=limit)}
+
+
+@app.get("/api/web/wiki")
+async def wiki_search(q: str = Query(..., min_length=1), limit: int = 6) -> dict[str, object]:
+    try:
+        return {"results": await search_wikis(q, limit=limit)}
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/api/web/brave")
+async def brave_search(q: str = Query(..., min_length=1), limit: int = 5) -> dict[str, object]:
+    try:
+        return {"results": await search_brave(q, limit=limit, strict=True)}
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.get("/api/images/{image_id}/file")

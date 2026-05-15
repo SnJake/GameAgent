@@ -79,6 +79,12 @@ CREATE TABLE IF NOT EXISTS index_runs (
     documents_count INTEGER DEFAULT 0,
     images_count INTEGER DEFAULT 0
 );
+
+CREATE TABLE IF NOT EXISTS web_cache (
+    cache_key TEXT PRIMARY KEY,
+    payload_json TEXT NOT NULL,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
 """
 
 

@@ -5,6 +5,7 @@ import remarkGfm from 'remark-gfm';
 import {
   Bot,
   Database,
+  Globe2,
   Image as ImageIcon,
   MessageSquare,
   Plus,
@@ -90,6 +91,8 @@ function App() {
   const [memory, setMemory] = useState({});
   const [useMemory, setUseMemory] = useState(true);
   const [useTools, setUseTools] = useState(false);
+  const [useWikiSearch, setUseWikiSearch] = useState(true);
+  const [useWebSearch, setUseWebSearch] = useState(false);
   const [topK, setTopK] = useState(8);
   const [rebuilding, setRebuilding] = useState(false);
   const endRef = useRef(null);
@@ -178,6 +181,8 @@ function App() {
           messages: payloadMessages,
           use_memory: useMemory,
           use_tool_calls: useTools,
+          use_wiki_search: useWikiSearch,
+          use_web_search: useWebSearch,
           top_k: Number(topK)
         })
       });
@@ -308,6 +313,18 @@ function App() {
             <input type="checkbox" checked={useTools} onChange={(e) => setUseTools(e.target.checked)} />
             <span>Model tool calls</span>
           </label>
+          <label className="toggle">
+            <input type="checkbox" checked={useWikiSearch} onChange={(e) => setUseWikiSearch(e.target.checked)} />
+            <span>Wiki Search</span>
+          </label>
+          <label className="toggle">
+            <input type="checkbox" checked={useWebSearch} onChange={(e) => setUseWebSearch(e.target.checked)} disabled={!health?.brave_configured || !health?.web_search_enabled} />
+            <span>Brave Web Search</span>
+          </label>
+          <div className="searchState">
+            <Globe2 size={14} />
+            <span>Wiki: {health?.wiki_search_enabled ? 'on' : 'off'} · Brave: {health?.brave_configured ? 'key ok' : 'no key'}</span>
+          </div>
           <label className="range">
             <span>Контекст: {topK}</span>
             <input min="3" max="20" type="range" value={topK} onChange={(e) => setTopK(e.target.value)} />
