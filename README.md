@@ -95,6 +95,9 @@ Core settings:
 LLM_PROVIDER=bothub
 LLM_TEMPERATURE=0.2
 LLM_TIMEOUT_SECONDS=120
+ENABLE_MODEL_TOOLS=true
+AGENT_MAX_TOOL_CALLS=6
+AGENT_MAX_TOOL_RESULT_CHARS=12000
 
 BOTHUB_API_KEY=
 BOTHUB_MODEL=
@@ -233,4 +236,4 @@ npm run build
 - `.env`, data folders, SQLite files, `node_modules`, and local llama.cpp builds are ignored by git.
 - Model keys are never stored in the UI.
 - Gemini currently uses retrieval-first prompting without model tool calls.
-- OpenAI-compatible providers can use model tool calls when enabled.
+- OpenAI-compatible providers can use model tool calls when enabled. Tool calls are locally schema-validated, permission-checked, bounded by a per-run tool-call budget, and returned to the model as structured observations.

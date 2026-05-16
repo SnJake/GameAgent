@@ -59,6 +59,8 @@ class Settings(BaseSettings):
     max_context_chars: int = Field(default=9000, ge=1000, le=40000)
     max_history_messages: int = Field(default=8, ge=2, le=40)
     enable_model_tools: bool = False
+    agent_max_tool_calls: int = Field(default=6, ge=1, le=20)
+    agent_max_tool_result_chars: int = Field(default=12000, ge=1000, le=40000)
 
     wiki_search_enabled: bool = True
     wiki_search_max_results: int = Field(default=4, ge=1, le=10)
